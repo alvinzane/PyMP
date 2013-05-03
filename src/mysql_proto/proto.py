@@ -36,7 +36,6 @@ class Proto(object):
         
         >>> Proto.build_fixed_int(8, 255)
         bytearray(b'\\xff\\x00\\x00\\x00\\x00\\x00\\x00\\x00')
-        
         """
         packet = bytearray(size)
         if size >= 1:
@@ -199,7 +198,209 @@ abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123\
         for i, c in enumerate(value):
             packet[i] = c;
         return packet;
+    
+    @staticmethod
+    def build_eop_str(value):
+        """
+        Build a MySQL End of Packet String
+        
+        >>> Proto.build_eop_str('ab')
+        bytearray(b'ab')
+        """
+        return Proto.build_fixed_str(len(value), value)
+    
+    @staticmethod
+    def build_filler(size, fill = 0x00):
+        """
+        Build a set of filler
+        
+        >>> Proto.build_filler(1)
+        bytearray(b'\\x00')
+        
+        >>> Proto.build_filler(2)
+        bytearray(b'\\x00\\x00')
+        
+        >>> Proto.build_filler(1, 0x1c)
+        bytearray(b'\\x1c')
+        
+        >>> Proto.build_filler(2, 0xff)
+        bytearray(b'\\xff\\xff')
+        """
+        packet = bytearray(size)
+        for i in xrange(size):
+            packet[i] = fill
+        return packet
+    
+    @staticmethod
+    def build_byte(value):
+        """
+        Build a extendable byte
+        
+        >>> Proto.build_byte(0)
+        bytearray(b'\\x00')
+        
+        >>> Proto.build_byte(1)
+        bytearray(b'\\x01')
+        
+        >>> Proto.build_byte(0xFF)
+        bytearray(b'\\xff')
+        """
+        packet = bytearray(1)
+        packet[0] = value
+        return packet
+    
+    @staticmethod
+    def get_fixed_int_sniplet(packet):
+        """
+        Extract a fixed int from a packet subset
+        
+        >>> Proto.get_fixed_int_sniplet(Proto.build_fixed_int(1, 0))
+        0
+        
+        >>> Proto.get_fixed_int_sniplet(Proto.build_fixed_int(1 ,1))
+        1
+        
+        >>> Proto.get_fixed_int_sniplet(Proto.build_fixed_int(1, 255))
+        255
+        """
+        value = 0
+        for i in xrange(len(packet)-1, 0, -1):
+            value |= packet[i] & 0xFF
+            value <<= 8
+        value |= packet[0] & 0xFF
+        return value
 
+    def get_fixed_int(self, size):
+        """
+        Extract a fixed int the current packet
+        
+        >>> packet = Proto(Proto.build_fixed_int(1, 0))
+        >>> packet.get_fixed_int(1)
+        0
+        """
+        value = Proto.get_fixed_int_sniplet(
+            self.packet[self.offset:self.offset+size])
+        self.offset += size
+        return value
+    
+    def get_filler(self, size):
+        """
+        Skip over packet filler
+        
+        >>> pckt = bytearray(5)
+        >>> packet = Proto(pckt)
+        >>> packet.offset
+        0
+        >>> packet.get_filler(2)
+        >>> packet.offset
+        2
+        """
+        self.offset += size
+    
+    def get_lenenc_int(self):
+        """
+        Extract a Length Encoded Int from the current packet position
+        
+        >>> pckt = Proto.build_lenenc_int(255)
+        >>> packet = Proto(pckt)
+        >>> packet.get_lenenc_int()
+        255
+        """
+        size = 0
+        
+        if self.packet[self.offset] < 251:
+            size = 1
+        elif self.packet[self.offset] == 252:
+            self.offset += 1
+            size = 2
+        elif self.packet[self.offset] == 253:
+            self.offset += 1
+            size = 3
+        elif self.packet[self.offset] == 254:
+            self.offset += 1
+            size = 8
+        
+        return self.get_fixed_int(size)
+    
+    def get_fixed_str(self, size):
+        """
+        Extract a fixed length string from the current packet position
+        
+        >>> target = "The brown dog did stuff"
+        >>> pckt = Proto.build_fixed_str(len(target), target)
+        >>> packet = Proto(pckt)
+        >>> packet.get_fixed_str(len(pckt))
+        'The brown dog did stuff'
+        """
+        value = ""
+        
+        for i in xrange(self.offset, self.offset + size):
+            value += chr(self.packet[i])
+            self.offset += 1
+            
+        return value
+    
+    def get_null_str(self):
+        """
+        Extract a null string from the current packet position
+        
+        >>> target = "The brown dog did stuff"
+        >>> pckt = Proto.build_null_str(target)
+        >>> packet = Proto(pckt)
+        >>> packet.get_null_str()
+        'The brown dog did stuff'
+        """
+        value = ""
+        
+        for i in xrange(self.offset, len(self.packet)):
+            if self.packet[i] == 0x00:
+                self.offset += 1
+                break
+            value += chr(self.packet[i])
+            self.offset += 1
+        
+        return value
+    
+    def get_eop_str(self):
+        """
+        Extract a eop string from the current packet position
+        
+        >>> target = "The brown dog did stuff"
+        >>> pckt = Proto.build_eop_str(target)
+        >>> packet = Proto(pckt)
+        >>> packet.get_eop_str()
+        'The brown dog did stuff'
+        """
+        value = ""
+        
+        for i in xrange(self.offset, len(self.packet)):
+            if self.packet[i] == 0x00 and i == len(self.packet) - 1:
+                self.offset += 1
+                break
+            value += chr(self.packet[i])
+            self.offset += 1
+        
+        return value
+    
+    def get_lenenc_str(self):
+        """
+        Extract a length encoded string from the current packet position
+        
+        >>> target = "The brown dog did stuff"
+        >>> pckt = Proto.build_lenenc_str(target)
+        >>> packet = Proto(pckt)
+        >>> packet.get_lenenc_str()
+        'The brown dog did stuff'
+        """
+        value = ""
+        size = self.get_lenenc_int()
+        
+        for i in xrange(self.offset, self.offset + size):
+            value += chr(self.packet[i])
+            self.offset += 1
+            
+        return value
+        
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
