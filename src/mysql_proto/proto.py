@@ -10,6 +10,34 @@ class Proto(object):
     
     @staticmethod
     def build_fixed_int(size, value):
+        """
+        Build a MySQL Fixed Int
+        
+        >>> Proto.build_fixed_int(1, 0)
+        bytearray(b'\\x00')
+        
+        >>> Proto.build_fixed_int(1, 255)
+        bytearray(b'\\xff')
+        
+        >>> Proto.build_fixed_int(2, 0)
+        bytearray(b'\\x00\\x00')
+        
+        >>> Proto.build_fixed_int(2, 0xFFFF)
+        bytearray(b'\\xff\\xff')
+        
+        >>> Proto.build_fixed_int(3, 0)
+        bytearray(b'\\x00\\x00\\x00')
+        
+        >>> Proto.build_fixed_int(4, 0)
+        bytearray(b'\\x00\\x00\\x00\\x00')
+        
+        >>> Proto.build_fixed_int(8, 0)
+        bytearray(b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00')
+        
+        >>> Proto.build_fixed_int(8, 255)
+        bytearray(b'\\xff\\x00\\x00\\x00\\x00\\x00\\x00\\x00')
+        
+        """
         packet = bytearray(size)
         if size >= 1:
             packet[0] = ((value >>  0) & 0xFF);
