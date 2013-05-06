@@ -2,39 +2,36 @@
 # coding=utf-8
 
 import abc
-from mysql_proto.proto import Proto
-from mysql_proto.colcount import ColCount
-from mysql_proto.flags import Flags
-from mysql_proto.eof import EOF
+from proto import Proto
+from flags import Flags
 
 class Packet(object):
     """
     Basic class for all mysql proto classes to inherit from
     """
-    sequenceId = 0;
+    sequenceId = None;
     
     @abc.abstractmethod
-    def getPayload():
+    def getPayload(self):
         """
         Return the payload as a bytearray
         """
         raise NotImplementedError('getPayload')
-        pass
     
-    def toPacket():
+    def toPacket(self):
         """
         Convert a Packet object to a byte array stream
         """
         payload = self.getPayload();
         
         # Size is payload + packet size + sequence id
-        size = len(payload)+4
+        size = len(payload)
         
         packet = bytearray(size+4)
         
-        packet += Proto.build_fixed_int(3, len(payload))
-        packet += Proto.build_fixed_int(1, self.sequenceId)
-        packet += payload
+        packet[0:2] = Proto.build_fixed_int(3, size)
+        packet[3] = Proto.build_fixed_int(1, self.sequenceId)[0]
+        packet[4:] = payload
         
         return packet
     
@@ -67,7 +64,7 @@ class Packet(object):
         """
         Dumps a packet to the logger
         """
-        pass
+        raise NotImplementedError('dump')
     
     @staticmethod
     def read_packet(socket):
@@ -96,6 +93,9 @@ class Packet(object):
         """
         Reads a full result set
         """
+        from colcount import ColCount
+        from eof import EOF
+        
         colCount = ColCount.loadFromPacket(buff).colCount
         
         # Evil optimization
