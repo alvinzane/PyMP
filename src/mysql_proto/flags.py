@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # coding=utf-8
 
 class Flags(object):
@@ -160,3 +161,12 @@ class Flags(object):
     RS_FULL                             = 1
     RS_COL_DEF                          = 2
     RS_DATA_FILE                        = 3
+    
+    CS_latin1_swedish_ci                = 8
+    CS_utf8_general_ci                  = 33
+    CS_binary                           = 63
+    
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
