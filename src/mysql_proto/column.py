@@ -25,6 +25,7 @@ class Column(Packet):
         
     def getPayload(self):
         payload = bytearray()
+        
         payload.extend(Proto.build_lenenc_str(self.catalog))
         payload.extend(Proto.build_lenenc_str(self.schema))
         payload.extend(Proto.build_lenenc_str(self.table))
@@ -38,6 +39,8 @@ class Column(Packet):
         payload.extend(Proto.build_fixed_int(2, self.flags))
         payload.extend(Proto.build_fixed_int(1, self.decimals))
         payload.extend(Proto.build_filler(2))
+        
+        return payload
 
     @staticmethod
     def loadFromPacket(packet):
