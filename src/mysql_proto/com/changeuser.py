@@ -1,9 +1,8 @@
-#!/usr/bin/env python
 # coding=utf-8
 
-from packet import Packet
-from proto import Proto
-from flags import Flags
+from ..packet import Packet
+from ..proto import Proto
+from ..flags import Flags
 
 class ChangeUser(Packet):
     user = ""
@@ -54,7 +53,3 @@ class ChangeUser(Packet):
         obj.characterSet = proto.get_fixed_int(2)
         
         return obj
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

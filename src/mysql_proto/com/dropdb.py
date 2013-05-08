@@ -1,9 +1,8 @@
-#!/usr/bin/env python
 # coding=utf-8
 
-from packet import Packet
-from proto import Proto
-from flags import Flags
+from ..packet import Packet
+from ..proto import Proto
+from ..flags import Flags
 
 class Dropdb(Packet):
     schema = ""
@@ -18,7 +17,7 @@ class Dropdb(Packet):
     
     @staticmethod
     def loadFromPacket(packet):
-        obj = Createdb()
+        obj = Dropdb()
         proto = Proto(packet, 3)
         
         obj.sequenceId = proto.get_fixed_int(1)
@@ -26,7 +25,3 @@ class Dropdb(Packet):
         obj.schema = proto.get_eop_str()
         
         return obj
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

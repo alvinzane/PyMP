@@ -1,9 +1,8 @@
-#!/usr/bin/env python
 # coding=utf-8
 
-from packet import Packet
-from proto import Proto
-from flags import Flags
+from ..packet import Packet
+from ..proto import Proto
+from ..flags import Flags
 
 class Fieldlist(Packet):
     table = ""
@@ -29,7 +28,3 @@ class Fieldlist(Packet):
         obj.fields = proto.get_eop_str()
         
         return obj
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

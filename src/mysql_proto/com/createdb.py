@@ -1,9 +1,8 @@
-#!/usr/bin/env python
 # coding=utf-8
 
-from packet import Packet
-from proto import Proto
-from flags import Flags
+from ..packet import Packet
+from ..proto import Proto
+from ..flags import Flags
 
 class Createdb(Packet):
     schema = ""
@@ -26,7 +25,3 @@ class Createdb(Packet):
         obj.schema = proto.get_eop_str()
         
         return obj
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

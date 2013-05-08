@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from packet import Packet
-from proto import Proto
-from flags import Flags
+from ..packet import Packet
+from ..proto import Proto
+from ..flags import Flags
 
 class Response(Packet):
     capabilityFlags = Flags.CLIENT_PROTOCOL_41
@@ -55,6 +55,11 @@ class Response(Packet):
         obj.sequenceId = proto.get_fixed_int(1)
         obj.capabilityFlags = proto.get_fixed_int(2)
         proto.offset -= 2
+        
+        print obj.capabilityFlags
+        print Flags.CLIENT_PROTOCOL_41
+        import sys
+        sys.exit(1)
         
         if obj.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
             obj.capabilityFlags = proto.get_fixed_int(4)
