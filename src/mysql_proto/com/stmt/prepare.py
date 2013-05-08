@@ -18,7 +18,7 @@ class Prepare(Packet):
     
     @staticmethod
     def loadFromPacket(packet):
-        obj = Statistics()
+        obj = Prepare()
         proto = Proto(packet, 3)
         
         obj.sequenceId = proto.get_fixed_int(1)
