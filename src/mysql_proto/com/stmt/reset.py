@@ -1,9 +1,8 @@
-#!/usr/bin/env python
 # coding=utf-8
 
-from packet import Packet
-from proto import Proto
-from flags import Flags
+from ...packet import Packet
+from ...proto import Proto
+from ...flags import Flags
 
 class Reset(Packet):
     data = bytearray()
@@ -24,7 +23,3 @@ class Reset(Packet):
         obj.data = proto.packet[proto.offset:]
         
         return obj
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

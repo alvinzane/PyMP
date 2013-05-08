@@ -1,9 +1,8 @@
-#!/usr/bin/env python
 # coding=utf-8
 
-from packet import Packet
-from proto import Proto
-from flags import Flags
+from ...packet import Packet
+from ...proto import Proto
+from ...flags import Flags
 
 class Prepare_Ok(Packet):
     
@@ -20,7 +19,3 @@ class Prepare_Ok(Packet):
         obj.sequenceId = proto.get_fixed_int(1)
         
         return obj
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

@@ -105,6 +105,53 @@ class TestProto(unittest.TestCase):
         self.assertEqual(obj.toPacket(), packet)
         self.assertEqual(obj.__class__.__name__, 'Dropdb')
         
+    def test_COM_STMT_PREPARE(self):
+        from mysql_proto.com.stmt.prepare import Prepare
+        
+        packet = bytearray()
+        packet.extend(self.hex_ba('1c 00 00 00 16 53 45 4c'))
+        packet.extend(self.hex_ba('45 43 54 20 43 4f 4e 43'))
+        packet.extend(self.hex_ba('41 54 28 3f 2c 20 3f 29'))
+        packet.extend(self.hex_ba('20 41 53 20 63 6f 6c 31'))
+        
+        obj = Prepare.loadFromPacket(packet)
+        self.assertEqual(obj.toPacket(), packet)
+        self.assertEqual(obj.__class__.__name__, 'Prepare')
+        
+    def test_COM_STMT_EXECUTE(self):
+        from mysql_proto.com.stmt.execute import Execute
+        
+        packet = bytearray()
+        packet.extend(self.hex_ba('12 00 00 00 17 01 00 00'))
+        packet.extend(self.hex_ba('00 00 01 00 00 00 00 01'))
+        packet.extend(self.hex_ba('0f 00 03 66 6f 6f'))
+        
+        obj = Execute.loadFromPacket(packet)
+        self.assertEqual(obj.toPacket(), packet)
+        self.assertEqual(obj.__class__.__name__, 'Execute')
+
+    def test_COM_STMT_CLOSE(self):
+        from mysql_proto.com.stmt.close import Close
+        
+        packet = bytearray()
+        packet.extend(self.hex_ba('05 00 00 00 19 01 00 00'))
+        packet.extend(self.hex_ba('00'))
+        
+        obj = Close.loadFromPacket(packet)
+        self.assertEqual(obj.toPacket(), packet)
+        self.assertEqual(obj.__class__.__name__, 'Close')
+
+    def test_COM_STMT_RESET(self):
+        from mysql_proto.com.stmt.reset import Reset
+        
+        packet = bytearray()
+        packet.extend(self.hex_ba('05 00 00 00 1a 01 00 00'))
+        packet.extend(self.hex_ba('00'))
+        
+        obj = Reset.loadFromPacket(packet)
+        self.assertEqual(obj.toPacket(), packet)
+        self.assertEqual(obj.__class__.__name__, 'Reset')
+        
 if __name__ == "__main__":
     # Initialize Options
     parser = optparse.OptionParser()
