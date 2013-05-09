@@ -62,8 +62,11 @@ class Engine(multiprocessing.Process):
             self.logger.setLevel(logging.WARNING)
             
         self.logger.debug('Accepted connection')
+        
+        multiprocessing.Process.__init__(self)
     
     def run(self):
+        self.logger.debug('Running')
         while not self.kill_received:
             if self.mode == Flags.MODE_INIT:
                 self.logger.debug("MODE_INIT");
@@ -84,7 +87,7 @@ class Engine(multiprocessing.Process):
                 self.logger.debug("MODE_READ_AUTH_RESULT");
                 self.nextMode = Flags.MODE_SEND_AUTH_RESULT;
             elif self.mode == Flags.MODE_SEND_AUTH_RESULT:
-                self.logger.tradebugce("MODE_SEND_AUTH_RESULT");
+                self.logger.debug("MODE_SEND_AUTH_RESULT");
                 self.nextMode = Flags.MODE_READ_QUERY;
             elif self.mode == Flags.MODE_READ_QUERY:
                 self.logger.debug("MODE_READ_QUERY");
@@ -109,3 +112,5 @@ class Engine(multiprocessing.Process):
             self.mode = self.nextMode
         
         self.logger.info('Exiting thread')
+        self.clientSocket.close()
+        sys.exit()

@@ -16,15 +16,6 @@ import socket
 
 from multiprocessing.reduction import reduce_handle
 
-paths = [
-    'src',
-    '../src'
-]
-
-for path in paths:
-    if os.path.exists(path):
-        sys.path.append(path)
-
 from mysql_proto.engine import Engine
 
 def main():
@@ -45,18 +36,15 @@ def main():
     serversocket.listen(int(
         config['pymp']['max_outstanding_connection_requests']))
     
-    # List of threads
-    threads = []
-    
-    while True:
-        try:
+    try:
+        while True:
             (clientsocket, address) = serversocket.accept()
             clientsocket_handle = reduce_handle(clientsocket.fileno())
-            threads.append(Engine(config, clientsocket_handle))
-        finally:
-            serversocket.close()
+            Engine(config, clientsocket_handle).start()
+    finally:
+        serversocket.close()
 
 if __name__ == "__main__":
     if setproctitle:
-        setproctitle('pymp')
+        setproctitle('pymp.py')
     main()
