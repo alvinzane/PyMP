@@ -65,7 +65,7 @@ class Packet(object):
         Dumps a packet to the logger
         """
         import logging
-        logger = logging.getLogger('pymp')
+        logger = logging.getLogger('pymp.engine.packet')
         offset = 0
         
         dump = 'Packet Dump\n'
@@ -110,8 +110,11 @@ class Packet(object):
         Reads a packet from a socket
         """
         # Read the size of the packet
+        nbytes = 0
         psize = bytearray(3)
-        nbytes = socket_in.recv_into(psize, 3, socket.MSG_WAITALL)
+        
+        while nbytes == 0:
+            nbytes = socket_in.recv_into(psize, 3, socket.MSG_WAITALL)
         
         size = Packet.getSize(psize)
         
@@ -126,6 +129,7 @@ class Packet(object):
         packet.extend(psize)
         packet.extend(packet_payload)
         
+        Packet.dump(packet)
         return packet
     
     @staticmethod

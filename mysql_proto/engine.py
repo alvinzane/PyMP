@@ -56,7 +56,7 @@ class Engine(multiprocessing.Process):
         self.config = config
         self.kill_received = False
         
-        self.logger = logging.getLogger('pymp')
+        self.logger = logging.getLogger('pymp.engine')
         formatter = logging.Formatter('%(process)d [%(asctime)s] %(message)s')
         if len(self.logger.handlers) == 0:
             streamHandler = logging.StreamHandler(sys.stdout)
