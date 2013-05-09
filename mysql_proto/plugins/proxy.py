@@ -7,8 +7,8 @@ from ..auth.challenge import Challenge
 from ..auth.response import Response
 from ..flags import Flags
 from ..resultset import ResultSet
-from com.initdb import Initdb
-from com.query import Query
+from ..com.initdb import Initdb
+from ..com.query import Query
 
 class Proxy(Plugin):
     serverSocket = None
