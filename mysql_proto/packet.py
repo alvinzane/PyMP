@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding=utf-8
 
 import abc
@@ -64,7 +63,45 @@ class Packet(object):
         """
         Dumps a packet to the logger
         """
-        raise NotImplementedError('dump')
+        import logging
+        logger = logging.getLogger('pymp')
+        offset = 0
+        
+        dump = 'Packet Dump\n'
+        
+        while offset < len(packet):
+            dump += hex(offset)[2:].zfill(8).upper()
+            dump += '  '
+            
+            for x in xrange(16):
+                if offset+x >= len(packet):
+                    dump += '   '
+                else:
+                    dump += hex(packet[offset+x])[2:].upper().zfill(2)
+                    dump += ' '
+                    if x == 7:
+                        dump += ' '
+                
+            dump += '  '
+            
+            for x in xrange(16):
+                if offset+x >= len(packet):
+                    break
+                c = chr(packet[offset+x])
+                if ( len(c) > 1
+                     or packet[offset+x] < 32
+                     or packet[offset+x] == 255 ):
+                    dump += '.'
+                else:
+                    dump += c
+                    
+                if x == 7:
+                    dump += ' '
+                
+            dump += '\n'
+            offset += 16
+            
+        logger.debug(dump)
     
     @staticmethod
     def read_packet(socket):
@@ -161,14 +198,3 @@ class Packet(object):
                                                packetPacketSize)
         
         return buff
-    
-    @staticmethod
-    def write(socket, buff):
-        """
-        Write a buffer to a socket
-        """
-        socket.sendAll(buff)
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

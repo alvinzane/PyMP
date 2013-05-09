@@ -27,6 +27,7 @@ class Proxy(Plugin):
     def read_handshake(self, context):
         context.logger.debug('Proxy.read_handshake')
         packet = Packet.read_packet(self.serverSocket)
+        Packet.dump(packet)
         context.authChallenge = Challenge.loadFromPacket(packet)
         context.authChallenge.removeCapabilityFlag(Flags.CLIENT_COMPRESS)
         context.authChallenge.removeCapabilityFlag(Flags.CLIENT_SSL)
@@ -44,6 +45,7 @@ class Proxy(Plugin):
     def read_auth(self, context):
         context.logger.debug('Proxy.read_auth')
         packet = Packet.read_packet(context.clientSocket)
+        Packet.dump(packet)
         context.authReply = Response.loadFromPacket(packet)
         
         if not context.authReply.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
