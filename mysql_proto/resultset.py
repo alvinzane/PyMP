@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from packet import Packet
-from proto import Proto
 from flags import Flags
+from colcount import ColCount
+from eof import EOF
 
 class ResultSet(object):
     characterSet = Flags.CS_latin1_swedish_ci

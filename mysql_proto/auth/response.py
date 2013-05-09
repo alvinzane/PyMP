@@ -34,7 +34,7 @@ class Response(Packet):
             payload.extend( Proto.build_fixed_int(1, self.characterSet));
             payload.extend( Proto.build_fixed_str(23, ""));
             payload.extend( Proto.build_null_str(self.username));
-            if this.hasCapabilityFlag(Flags.CLIENT_SECURE_CONNECTION):
+            if self.hasCapabilityFlag(Flags.CLIENT_SECURE_CONNECTION):
                 payload.extend( Proto.build_lenenc_str(self.authResponse));
             else:
                 payload.extend( Proto.build_null_str(self.authResponse));

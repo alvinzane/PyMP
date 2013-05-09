@@ -3,7 +3,6 @@
 
 from packet import Packet
 from proto import Proto
-from flags import Flags
 
 class Response(Packet):
     data = bytearray()

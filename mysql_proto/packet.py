@@ -191,10 +191,10 @@ class Packet(object):
         if EOF.loadFromPacket(packet).hasStatusFlags(
             Flags.SERVER_MORE_RESULTS_EXISTS):
             buff.extend(Packet.read_packet(socket_in))
-            buff = Packet.read_full_result_set(socket_id,
+            buff = Packet.read_full_result_set(socket_in,
                                                socket_out,
                                                buff,
-                                               bufferResultSet,
-                                               packetPacketSize)
+                                               bufferResultSet=bufferResultSet,
+                                               packedPacketSize=packedPacketSize)
         
         return buff

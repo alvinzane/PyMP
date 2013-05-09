@@ -7,6 +7,8 @@ from ..auth.challenge import Challenge
 from ..auth.response import Response
 from ..flags import Flags
 from ..resultset import ResultSet
+from com.initdb import Initdb
+from com.query import Query
 
 class Proxy(Plugin):
     serverSocket = None
@@ -49,7 +51,7 @@ class Proxy(Plugin):
         context.authReply = Response.loadFromPacket(packet)
         
         if not context.authReply.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
-            this.logger.fatal('We do not support Protocols under 4.1')
+            self.logger.fatal('We do not support Protocols under 4.1')
             context.kill_received = True
             return
         
@@ -70,7 +72,7 @@ class Proxy(Plugin):
         context.logger.debug('Proxy.read_auth_result')
         packet = Packet.read_packet(self.serverSocket)
         if Packet.getType(packet) != Flags.OK:
-            this.logger.fatal('Auth is not okay!')
+            self.logger.fatal('Auth is not okay!')
         context.buff.extend(packet)
     
     def send_auth_result(self, context):
@@ -80,11 +82,11 @@ class Proxy(Plugin):
     
     def read_query(self, context):
         context.logger.debug('Proxy.read_query')
-        context.bufferResultSet = false
+        context.bufferResultSet = False
         
         packet = Packet.read_packet(context.clientSocket)
         context.sequenceId = Packet.getSequenceId(packet)
-        this.logger.debug('Client sequenceId: %s' % context.sequenceId)
+        self.logger.debug('Client sequenceId: %s' % context.sequenceId)
         
         packet_type = Packet.getType(packet)
         
@@ -93,10 +95,10 @@ class Proxy(Plugin):
             context.kill_received = True
         elif packet_type == Flags.COM_INIT_DB:
             context.logger.trace('COM_INIT_DB');
-            context.schema = Com_Initdb.loadFromPacket(packet).schema
+            context.schema = Initdb.loadFromPacket(packet).schema
         elif packet_type == Flags.COM_QUERY:
             context.logger.debug('COM_QUERY')
-            context.query = Com_Query.loadFromPacket(packet).query
+            context.query = Query.loadFromPacket(packet).query
     
     def send_query(self, context):
         context.logger.debug('Proxy.send_query')

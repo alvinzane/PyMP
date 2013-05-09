@@ -28,7 +28,7 @@ class ChangeUser(Packet):
         
         payload.extend(Proto.build_byte(Flags.COM_CHANGE_USER))
         payload.extend(Proto.build_null_str(self.user))
-        if not this.hasCapabilityFlag(Flags.CLIENT_SECURE_CONNECTION):
+        if not self.hasCapabilityFlag(Flags.CLIENT_SECURE_CONNECTION):
             payload.extend(Proto.build_lenenc_str(self.authResponse))
         else:
             payload.extend(Proto.build_null_str(self.authResponse))

@@ -42,7 +42,7 @@ def main():
         while True:
             (clientsocket, address) = serversocket.accept()
             clientsocket_handle = reduce_handle(clientsocket.fileno())
-            Engine(config, clientsocket_handle)
+            Engine(config, clientsocket_handle).start()
     finally:
         serversocket.close()
 

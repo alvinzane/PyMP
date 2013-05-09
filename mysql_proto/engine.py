@@ -41,17 +41,16 @@ class Engine(multiprocessing.Process):
     plugins = {}
     
     def __init__(self, config, clientSocket):
-        clientSocket = rebuild_handle(clientSocket)
-        clientSocket = socket.fromfd(clientSocket,
-                                     socket.AF_INET,
-                                     socket.SOCK_STREAM)
+        self.clientSocket = rebuild_handle(clientSocket)
+        self.clientSocket = socket.fromfd(self.clientSocket,
+                                          socket.AF_INET,
+                                          socket.SOCK_STREAM)
         
-        clientSocket.setsockopt(socket.IPPROTO_TCP,
-                                socket.TCP_NODELAY,
-                                1)
+        self.clientSocket.setsockopt(socket.IPPROTO_TCP,
+                                     socket.TCP_NODELAY,
+                                     1)
         
         self.config = config
-        self.clientSocket = clientSocket
         self.kill_received = False
         
         self.logger = logging.getLogger('pymp')
