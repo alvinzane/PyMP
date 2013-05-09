@@ -51,6 +51,8 @@ class Engine(multiprocessing.Process):
                                      socket.TCP_NODELAY,
                                      1)
         
+        self.clientSocket.settimeout(None)
+        
         self.config = config
         self.kill_received = False
         
@@ -75,85 +77,88 @@ class Engine(multiprocessing.Process):
             
     def run(self):
         self.logger.debug('Running')
-        while not self.kill_received:
-            if self.mode == Flags.MODE_INIT:
-                self.logger.debug("MODE_INIT");
-                for plugin in self.plugins:
-                    self.plugins[plugin].init(self)
-                self.nextMode = Flags.MODE_READ_HANDSHAKE;
-                
-            elif self.mode == Flags.MODE_READ_HANDSHAKE:
-                self.logger.debug("MODE_READ_HANDSHAKE");
-                for plugin in self.plugins:
-                    self.plugins[plugin].read_handshake(self)
-                self.nextMode = Flags.MODE_SEND_HANDSHAKE;
-                
-            elif self.mode == Flags.MODE_SEND_HANDSHAKE:
-                self.logger.debug("MODE_SEND_HANDSHAKE");
-                for plugin in self.plugins:
-                    self.plugins[plugin].send_handshake(self)
-                self.nextMode = Flags.MODE_READ_AUTH;
-                
-            elif self.mode == Flags.MODE_READ_AUTH:
-                self.logger.debug("MODE_READ_AUTH");
-                for plugin in self.plugins:
-                    self.plugins[plugin].read_auth(self)
-                self.nextMode = Flags.MODE_SEND_AUTH;
-                
-            elif self.mode == Flags.MODE_SEND_AUTH:
-                self.logger.debug("MODE_SEND_AUTH");
-                for plugin in self.plugins:
-                    self.plugins[plugin].send_auth(self)
-                self.nextMode = Flags.MODE_READ_AUTH_RESULT;
-                
-            elif self.mode == Flags.MODE_READ_AUTH_RESULT:
-                self.logger.debug("MODE_READ_AUTH_RESULT");
-                for plugin in self.plugins:
-                    self.plugins[plugin].read_auth_result(self)
-                self.nextMode = Flags.MODE_SEND_AUTH_RESULT;
-                
-            elif self.mode == Flags.MODE_SEND_AUTH_RESULT:
-                self.logger.debug("MODE_SEND_AUTH_RESULT");
-                for plugin in self.plugins:
-                    self.plugins[plugin].send_auth_result(self)
-                self.nextMode = Flags.MODE_READ_QUERY;
-                
-            elif self.mode == Flags.MODE_READ_QUERY:
-                self.logger.debug("MODE_READ_QUERY");
-                for plugin in self.plugins:
-                    self.plugins[plugin].read_query(self)
-                self.nextMode = Flags.MODE_SEND_QUERY;
-                
-            elif self.mode == Flags.MODE_SEND_QUERY:
-                self.logger.debug("MODE_SEND_QUERY");
-                for plugin in self.plugins:
-                    self.plugins[plugin].send_query(self)
-                self.nextMode = Flags.MODE_READ_QUERY_RESULT;
-                
-            elif self.mode == Flags.MODE_READ_QUERY_RESULT:
-                self.logger.debug("MODE_READ_QUERY_RESULT");
-                for plugin in self.plugins:
-                    self.plugins[plugin].read_query_result(self)
-                self.nextMode = Flags.MODE_SEND_QUERY_RESULT;
-                
-            elif self.mode == Flags.MODE_SEND_QUERY_RESULT:
-                self.logger.debug("MODE_SEND_QUERY_RESULT");
-                for plugin in self.plugins:
-                    self.plugins[plugin].send_query_result(self)
-                self.nextMode = Flags.MODE_READ_QUERY;
-                
-            elif self.mode == Flags.MODE_CLEANUP:
-                self.logger.debug("MODE_CLEANUP");
-                for plugin in self.plugins:
-                    self.plugins[plugin].cleanup(self)
-                self.nextMode = Flags.MODE_CLEANUP;
-                self.kill_received = True
-                
-            else:
-                self.logger.fatal("UNKNOWN MODE "+self.mode);
-                self.kill_received = True
-            # Set the next mode
-            self.mode = self.nextMode
-        
-        self.logger.info('Exiting thread')
-        self.clientSocket.close()
+        try:
+            while not self.kill_received:
+                if self.mode == Flags.MODE_INIT:
+                    self.nextMode = Flags.MODE_READ_HANDSHAKE;
+                    self.logger.debug("MODE_INIT");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].init(self)
+                    
+                elif self.mode == Flags.MODE_READ_HANDSHAKE:
+                    self.nextMode = Flags.MODE_SEND_HANDSHAKE;
+                    self.logger.debug("MODE_READ_HANDSHAKE");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].read_handshake(self)
+                    
+                elif self.mode == Flags.MODE_SEND_HANDSHAKE:
+                    self.nextMode = Flags.MODE_READ_AUTH;
+                    self.logger.debug("MODE_SEND_HANDSHAKE");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].send_handshake(self)
+                    
+                elif self.mode == Flags.MODE_READ_AUTH:
+                    self.nextMode = Flags.MODE_SEND_AUTH;
+                    self.logger.debug("MODE_READ_AUTH");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].read_auth(self)
+                    
+                elif self.mode == Flags.MODE_SEND_AUTH:
+                    self.nextMode = Flags.MODE_READ_AUTH_RESULT;
+                    self.logger.debug("MODE_SEND_AUTH");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].send_auth(self)
+                    
+                elif self.mode == Flags.MODE_READ_AUTH_RESULT:
+                    self.nextMode = Flags.MODE_SEND_AUTH_RESULT;
+                    self.logger.debug("MODE_READ_AUTH_RESULT");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].read_auth_result(self)
+                    
+                elif self.mode == Flags.MODE_SEND_AUTH_RESULT:
+                    self.nextMode = Flags.MODE_READ_QUERY;
+                    self.logger.debug("MODE_SEND_AUTH_RESULT");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].send_auth_result(self)
+                    
+                elif self.mode == Flags.MODE_READ_QUERY:
+                    self.nextMode = Flags.MODE_SEND_QUERY;
+                    self.logger.debug("MODE_READ_QUERY");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].read_query(self)
+                    
+                elif self.mode == Flags.MODE_SEND_QUERY:
+                    self.nextMode = Flags.MODE_READ_QUERY_RESULT;
+                    self.logger.debug("MODE_SEND_QUERY");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].send_query(self)
+                    
+                elif self.mode == Flags.MODE_READ_QUERY_RESULT:
+                    self.nextMode = Flags.MODE_SEND_QUERY_RESULT;
+                    self.logger.debug("MODE_READ_QUERY_RESULT");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].read_query_result(self)
+                    
+                elif self.mode == Flags.MODE_SEND_QUERY_RESULT:
+                    self.nextMode = Flags.MODE_READ_QUERY;
+                    self.logger.debug("MODE_SEND_QUERY_RESULT");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].send_query_result(self)
+                    
+                elif self.mode == Flags.MODE_CLEANUP:
+                    self.nextMode = Flags.MODE_CLEANUP;
+                    self.logger.debug("MODE_CLEANUP");
+                    for plugin in self.plugins:
+                        self.plugins[plugin].cleanup(self)
+                    self.kill_received = True
+                    
+                else:
+                    self.logger.fatal("UNKNOWN MODE "+self.mode);
+                    self.kill_received = True
+                # Set the next mode
+                self.mode = self.nextMode
+        except Exception:
+            pass
+        finally:
+            self.logger.info('Exiting thread')
+            self.clientSocket.close()

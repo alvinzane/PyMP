@@ -3,6 +3,7 @@
 import abc
 from proto import Proto
 from flags import Flags
+import socket
 
 class Packet(object):
     """
@@ -104,18 +105,21 @@ class Packet(object):
         logger.debug(dump)
     
     @staticmethod
-    def read_packet(socket):
+    def read_packet(socket_in):
         """
         Reads a packet from a socket
         """
         # Read the size of the packet
         psize = bytearray(3)
-        (nbytes, address) = socket.recvfrom_into(psize, 3)
+        nbytes = socket_in.recv_into(psize, 3, socket.MSG_WAITALL)
+        
         size = Packet.getSize(psize)
         
         # Read the rest of the packet
         packet_payload = bytearray(size+1)
-        (nbytes, address) = socket.recvfrom_into(packet_payload, size+1)
+        nbytes = socket_in.recv_into(packet_payload,
+                                     size+1,
+                                     socket.MSG_WAITALL)
         
         # Combine the chunks
         packet = bytearray()
@@ -137,7 +141,7 @@ class Packet(object):
         
         # Evil optimization
         if not bufferResultSet:
-            Packet.write(socket_out, buff)
+            socket_out.sendall(buff)
             buff = bytearray()
         
         # Read columns
@@ -146,7 +150,7 @@ class Packet(object):
             
             # Evil optimization
             if not bufferResultSet:
-                Packet.write(socket_out, packet)
+                socket_out.sendall(packet)
             else:
                 buff.extend(packet)
                 
@@ -168,7 +172,7 @@ class Packet(object):
                 
                 # Evil optimization
                 if not bufferResultSet:
-                    Packet.write(socket_out, packedPacket)
+                    socket_out.sendall(packedPacket)
                 else:
                     buff.extend(packedPacket)
                     
@@ -179,7 +183,7 @@ class Packet(object):
                 
         # Evil optimization
         if not bufferResultSet:
-            Packet.write(socket_out, packedPacket)
+            socket_out.sendall(packedPacket)
         else:
             buff.extend(packedPacket)
             
@@ -188,7 +192,7 @@ class Packet(object):
             return buff
         
         # Multiple result sets?
-        if EOF.loadFromPacket(packet).hasStatusFlags(
+        if EOF.loadFromPacket(packet).hasStatusFlag(
             Flags.SERVER_MORE_RESULTS_EXISTS):
             buff.extend(Packet.read_packet(socket_in))
             buff = Packet.read_full_result_set(socket_in,

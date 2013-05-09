@@ -19,6 +19,7 @@ class Proxy(Plugin):
         self.serverSocket.setsockopt(socket.IPPROTO_TCP,
                                      socket.TCP_NODELAY,
                                      1)
+        self.serverSocket.settimeout(None)
         self.serverSocket.connect((context.config[
             'plugins']['Proxy']['remoteHost'],
                                    int(
@@ -51,7 +52,7 @@ class Proxy(Plugin):
         context.authReply = Response.loadFromPacket(packet)
         
         if not context.authReply.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
-            self.logger.fatal('We do not support Protocols under 4.1')
+            context.logger.fatal('We do not support Protocols under 4.1')
             context.kill_received = True
             return
         
@@ -72,7 +73,7 @@ class Proxy(Plugin):
         context.logger.debug('Proxy.read_auth_result')
         packet = Packet.read_packet(self.serverSocket)
         if Packet.getType(packet) != Flags.OK:
-            self.logger.fatal('Auth is not okay!')
+            context.logger.fatal('Auth is not okay!')
         context.buff.extend(packet)
     
     def send_auth_result(self, context):
@@ -85,8 +86,9 @@ class Proxy(Plugin):
         context.bufferResultSet = False
         
         packet = Packet.read_packet(context.clientSocket)
+        Packet.dump(packet)
         context.sequenceId = Packet.getSequenceId(packet)
-        self.logger.debug('Client sequenceId: %s' % context.sequenceId)
+        context.logger.debug('Client sequenceId: %s' % context.sequenceId)
         
         packet_type = Packet.getType(packet)
         
@@ -110,7 +112,21 @@ class Proxy(Plugin):
     def read_query_result(self, context):
         context.logger.debug('Proxy.read_query_result')
         packet = Packet.read_packet(self.serverSocket)
+        context.sequenceId = Packet.getSequenceId(packet)
         context.buff.extend(packet)
+        
+        packetType = Packet.getType(packet)
+        
+        if packetType != Flags.OK and packetType != Flags.ERR:
+            context.buff.extend(
+                Packet.read_full_result_set(
+                    self.serverSocket,
+                    context.clientSocket,
+                    context.buff,
+                    context.bufferResultSet
+                )
+            )
+        
     
     def send_query_result(self, context):
         context.logger.debug('Proxy.send_query_result')

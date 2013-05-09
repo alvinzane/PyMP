@@ -9,6 +9,7 @@ import os
 import socket
 
 from multiprocessing.reduction import reduce_handle
+from multiprocessing import active_children
 
 sys.path.append('.')
 
@@ -27,15 +28,23 @@ def main():
         
     # Start listening to port...
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    serversocket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     serversocket.bind((config['pymp']['ip'],
                        int(config['pymp']['port'])))
     serversocket.listen(int(
         config['pymp']['max_outstanding_connection_requests']))
     
+    engines = []
+    
     try:
         while True:
             (clientsocket, address) = serversocket.accept()
-            Engine(config, reduce_handle(clientsocket.fileno())).start()
+            engine = Engine(config, reduce_handle(clientsocket.fileno()))
+            engine.daemon = True
+            engine.start()
+            engines.append(engine)
+            engines = filter(lambda w: w in engines, active_children())
     finally:
         serversocket.close()
 
