@@ -56,11 +56,6 @@ class Response(Packet):
         obj.capabilityFlags = proto.get_fixed_int(2)
         proto.offset -= 2
         
-        print obj.capabilityFlags
-        print Flags.CLIENT_PROTOCOL_41
-        import sys
-        sys.exit(1)
-        
         if obj.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
             obj.capabilityFlags = proto.get_fixed_int(4)
             obj.maxPacketSize = proto.get_fixed_int(4)

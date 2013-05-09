@@ -1,9 +1,9 @@
 # coding=utf-8
 
+from flags import Flags
 import logging
 import multiprocessing
 from multiprocessing.reduction import rebuild_handle
-from mysql_proto.flags import Flags
 import socket
 import sys
 
@@ -41,6 +41,7 @@ class Engine(multiprocessing.Process):
     plugins = {}
     
     def __init__(self, config, clientSocket):
+        super(Engine, self).__init__()
         self.clientSocket = rebuild_handle(clientSocket)
         self.clientSocket = socket.fromfd(self.clientSocket,
                                           socket.AF_INET,
@@ -71,7 +72,7 @@ class Engine(multiprocessing.Process):
         if 'Proxy' in config['plugins']['enabled']:
             from plugins.proxy import Proxy
             self.plugins['Proxy'] = Proxy()
-    
+            
     def run(self):
         self.logger.debug('Running')
         while not self.kill_received:
@@ -156,8 +157,3 @@ class Engine(multiprocessing.Process):
         
         self.logger.info('Exiting thread')
         self.clientSocket.close()
-        
-    def halt(self):
-        self.kill_received = True
-        self.mode = Flags.MODE_CLEANUP
-        self.nextMode = Flags.MODE_CLEANUP

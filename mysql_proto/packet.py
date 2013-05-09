@@ -118,9 +118,9 @@ class Packet(object):
         (nbytes, address) = socket.recvfrom_into(packet_payload, size+1)
         
         # Combine the chunks
-        packet = bytearray(size+4)
-        packet += psize
-        packet += packet_payload
+        packet = bytearray()
+        packet.extend(psize)
+        packet.extend(packet_payload)
         
         return packet
     

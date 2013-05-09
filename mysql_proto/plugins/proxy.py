@@ -99,6 +99,8 @@ class Proxy(Plugin):
         elif packet_type == Flags.COM_QUERY:
             context.logger.debug('COM_QUERY')
             context.query = Query.loadFromPacket(packet).query
+            
+        context.buff.extend(packet)
     
     def send_query(self, context):
         context.logger.debug('Proxy.send_query')
@@ -108,6 +110,7 @@ class Proxy(Plugin):
     def read_query_result(self, context):
         context.logger.debug('Proxy.read_query_result')
         packet = Packet.read_packet(self.serverSocket)
+        context.buff.extend(packet)
     
     def send_query_result(self, context):
         context.logger.debug('Proxy.send_query_result')
@@ -116,4 +119,3 @@ class Proxy(Plugin):
     
     def cleanup(self, context):
         context.logger.debug('Proxy.cleanup')
-        context.kill_received = True
