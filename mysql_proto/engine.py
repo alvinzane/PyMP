@@ -58,10 +58,11 @@ class Engine(multiprocessing.Process):
         
         self.logger = logging.getLogger('pymp')
         formatter = logging.Formatter('%(process)d [%(asctime)s] %(message)s')
-        streamHandler = logging.StreamHandler(sys.stdout)
-        streamHandler.setFormatter(formatter)
-        streamHandler.setLevel(logging.DEBUG)
-        self.logger.addHandler(streamHandler)
+        if len(self.logger.handlers) == 0:
+            streamHandler = logging.StreamHandler(sys.stdout)
+            streamHandler.setFormatter(formatter)
+            streamHandler.setLevel(logging.DEBUG)
+            self.logger.addHandler(streamHandler)
         if config['log']['verbose'] > 2:
             self.logger.setLevel(logging.DEBUG)
         elif config['log']['verbose'] > 1:
