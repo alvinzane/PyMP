@@ -1,0 +1,17 @@
+[pymp]
+# Which ip to bind to. Empty would be all
+ip = 127.0.0.1
+# Which port to bind to?
+port = 6060
+# Max connection requests
+max_outstanding_connection_requests = 5
+
+[log]
+verbose = 3
+
+[plugins]
+enabled = Proxy,
+
+[[Proxy]]
+remoteHost=127.0.0.1
+remotePort=3306

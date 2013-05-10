@@ -14,7 +14,7 @@ class Proxy(Plugin):
     serverSocket = None
     
     def init(self, context):
-        context.logger.debug('Proxy.init')
+        context.logger.info('Proxy.init')
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serverSocket.setsockopt(socket.IPPROTO_TCP,
                                      socket.TCP_NODELAY,
@@ -31,7 +31,7 @@ class Proxy(Plugin):
                                     )))
     
     def read_handshake(self, context):
-        context.logger.debug('Proxy.read_handshake')
+        context.logger.info('Proxy.read_handshake')
         packet = Packet.read_packet(self.serverSocket)
         context.authChallenge = Challenge.loadFromPacket(packet)
         context.authChallenge.removeCapabilityFlag(Flags.CLIENT_COMPRESS)
@@ -43,12 +43,12 @@ class Proxy(Plugin):
         context.buff.extend(context.authChallenge.toPacket())
     
     def send_handshake(self, context):
-        context.logger.debug('Proxy.send_handshake')
+        context.logger.info('Proxy.send_handshake')
         context.clientSocket.sendall(context.buff)
         context.buff = bytearray()
     
     def read_auth(self, context):
-        context.logger.debug('Proxy.read_auth')
+        context.logger.info('Proxy.read_auth')
         packet = Packet.read_packet(context.clientSocket)
         context.authReply = Response.loadFromPacket(packet)
         
@@ -66,51 +66,51 @@ class Proxy(Plugin):
         context.buff.extend(context.authReply.toPacket())
     
     def send_auth(self, context):
-        context.logger.debug('Proxy.send_auth')
+        context.logger.info('Proxy.send_auth')
         self.serverSocket.sendall(context.buff)
         context.buff = bytearray()
     
     def read_auth_result(self, context):
-        context.logger.debug('Proxy.read_auth_result')
+        context.logger.info('Proxy.read_auth_result')
         packet = Packet.read_packet(self.serverSocket)
         if Packet.getType(packet) != Flags.OK:
             context.logger.fatal('Auth is not okay!')
         context.buff.extend(packet)
     
     def send_auth_result(self, context):
-        context.logger.debug('Proxy.send_auth_result')
+        context.logger.info('Proxy.send_auth_result')
         context.clientSocket.sendall(context.buff)
         context.buff = bytearray()
     
     def read_query(self, context):
-        context.logger.debug('Proxy.read_query')
+        context.logger.info('Proxy.read_query')
         context.bufferResultSet = False
         
         packet = Packet.read_packet(context.clientSocket)
         context.sequenceId = Packet.getSequenceId(packet)
-        context.logger.debug('Client sequenceId: %s' % context.sequenceId)
+        context.logger.info('Client sequenceId: %s' % context.sequenceId)
         
         packet_type = Packet.getType(packet)
         
         if packet_type == Flags.COM_QUIT:
-            context.logger.debug('COM_QUIT')
+            context.logger.info('COM_QUIT')
             context.halt()
         elif packet_type == Flags.COM_INIT_DB:
-            context.logger.debug('COM_INIT_DB');
+            context.logger.info('COM_INIT_DB');
             context.schema = Initdb.loadFromPacket(packet).schema
         elif packet_type == Flags.COM_QUERY:
-            context.logger.debug('COM_QUERY')
+            context.logger.info('COM_QUERY')
             context.query = Query.loadFromPacket(packet).query
             
         context.buff.extend(packet)
     
     def send_query(self, context):
-        context.logger.debug('Proxy.send_query')
+        context.logger.info('Proxy.send_query')
         self.serverSocket.sendall(context.buff)
         context.buff = bytearray()
     
     def read_query_result(self, context):
-        context.logger.debug('Proxy.read_query_result')
+        context.logger.info('Proxy.read_query_result')
         packet = Packet.read_packet(self.serverSocket)
         context.sequenceId = Packet.getSequenceId(packet)
         context.buff.extend(packet)
@@ -129,9 +129,9 @@ class Proxy(Plugin):
         
     
     def send_query_result(self, context):
-        context.logger.debug('Proxy.send_query_result')
+        context.logger.info('Proxy.send_query_result')
         context.clientSocket.sendall(context.buff)
         context.buff = bytearray()
     
     def cleanup(self, context):
-        context.logger.debug('Proxy.cleanup')
+        context.logger.info('Proxy.cleanup')

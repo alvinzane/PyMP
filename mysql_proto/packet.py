@@ -67,6 +67,9 @@ class Packet(object):
         logger = logging.getLogger('pymp.engine.packet')
         offset = 0
         
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+        
         dump = 'Packet Dump\n'
         
         while offset < len(packet):
