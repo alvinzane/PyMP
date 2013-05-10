@@ -19,6 +19,9 @@ class Proxy(Plugin):
         self.serverSocket.setsockopt(socket.IPPROTO_TCP,
                                      socket.TCP_NODELAY,
                                      1)
+        self.serverSocket.setsockopt(socket.SOL_SOCKET,
+                                     socket.SO_KEEPALIVE,
+                                     1)
         self.serverSocket.settimeout(None)
         self.serverSocket.connect((context.config[
             'plugins']['Proxy']['remoteHost'],
@@ -51,7 +54,7 @@ class Proxy(Plugin):
         
         if not context.authReply.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
             context.logger.fatal('We do not support Protocols under 4.1')
-            context.kill_received = True
+            context.halt()
             return
         
         context.authReply.removeCapabilityFlag(Flags.CLIENT_COMPRESS)
@@ -91,7 +94,7 @@ class Proxy(Plugin):
         
         if packet_type == Flags.COM_QUIT:
             context.logger.trace('COM_QUIT')
-            context.kill_received = True
+            context.halt()
         elif packet_type == Flags.COM_INIT_DB:
             context.logger.trace('COM_INIT_DB');
             context.schema = Initdb.loadFromPacket(packet).schema

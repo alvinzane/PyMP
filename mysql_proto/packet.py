@@ -110,27 +110,21 @@ class Packet(object):
         Reads a packet from a socket
         """
         # Read the size of the packet
-        nbytes = 0
         psize = bytearray(3)
+        nbytes = socket_in.recv_into(psize, 3)
         
-        while nbytes == 0:
-            nbytes = socket_in.recv_into(psize, 3, socket.MSG_WAITALL)
-        
-        size = Packet.getSize(psize)
+        size = Packet.getSize(psize)+1
         
         # Read the rest of the packet
-        packet_payload = bytearray(size+1)
+        packet_payload = bytearray(size)
         nbytes = socket_in.recv_into(packet_payload,
-                                     size+1,
-                                     socket.MSG_WAITALL)
+                                     size)
         
         # Combine the chunks
-        packet = bytearray()
-        packet.extend(psize)
-        packet.extend(packet_payload)
+        psize.extend(packet_payload)
+        Packet.dump(psize)
         
-        Packet.dump(packet)
-        return packet
+        return psize
     
     @staticmethod
     def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
@@ -149,7 +143,7 @@ class Packet(object):
             buff = bytearray()
         
         # Read columns
-        for i in xrange(0, colCount):
+        for i in xrange(0, colCount+1):
             packet = Packet.read_packet(socket_in)
             
             # Evil optimization
@@ -164,11 +158,6 @@ class Packet(object):
         while True:
             packet = Packet.read_packet(socket_in)
             packetType = Packet.getType(packet)
-            
-            if packetType == Flags.EOF or packetType == Flags.ERR:
-                buff.extend(packedPacket)
-                packedPacket = packet
-                break
             
             if len(packedPacket) + len(packet) > packedPacketSize:
                 subsize = packedPacketSize - len(packedPacket)
@@ -185,6 +174,9 @@ class Packet(object):
             else:
                 packedPacket.extend(packet)
                 
+            if packetType == Flags.EOF or packetType == Flags.ERR:
+                break
+                
         # Evil optimization
         if not bufferResultSet:
             socket_out.sendall(packedPacket)
@@ -192,17 +184,16 @@ class Packet(object):
             buff.extend(packedPacket)
             
         # Show Create Table or similar?
-        if Packet.getType(packet) == Flags.ERR:
+        if packetType == Flags.ERR:
             return buff
         
         # Multiple result sets?
         if EOF.loadFromPacket(packet).hasStatusFlag(
             Flags.SERVER_MORE_RESULTS_EXISTS):
             buff.extend(Packet.read_packet(socket_in))
-            buff = Packet.read_full_result_set(socket_in,
-                                               socket_out,
-                                               buff,
-                                               bufferResultSet=bufferResultSet,
-                                               packedPacketSize=packedPacketSize)
-        
+            buff.extend(Packet.read_full_result_set(socket_in,
+                                                    socket_out,
+                                                    buff,
+                                                    bufferResultSet=bufferResultSet,
+                                                    packedPacketSize=packedPacketSize))
         return buff

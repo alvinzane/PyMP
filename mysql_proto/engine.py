@@ -51,13 +51,17 @@ class Engine(multiprocessing.Process):
                                      socket.TCP_NODELAY,
                                      1)
         
+        self.clientSocket.setsockopt(socket.SOL_SOCKET,
+                                     socket.SO_KEEPALIVE,
+                                     1)
+        
         self.clientSocket.settimeout(None)
         
         self.config = config
         self.kill_received = False
         
         self.logger = logging.getLogger('pymp.engine')
-        formatter = logging.Formatter('%(process)d [%(asctime)s] %(message)s')
+        formatter = logging.Formatter('%(process)d [%(asctime)s] %(filename)s:%(lineno)d %(message)s')
         if len(self.logger.handlers) == 0:
             streamHandler = logging.StreamHandler(sys.stdout)
             streamHandler.setFormatter(formatter)
@@ -151,15 +155,19 @@ class Engine(multiprocessing.Process):
                     self.logger.debug("MODE_CLEANUP");
                     for plugin in self.plugins:
                         self.plugins[plugin].cleanup(self)
-                    self.kill_received = True
+                    self.halt()
                     
                 else:
                     self.logger.fatal("UNKNOWN MODE "+self.mode);
-                    self.kill_received = True
+                    self.halt()
                 # Set the next mode
                 self.mode = self.nextMode
-        except Exception:
-            pass
         finally:
             self.logger.info('Exiting thread')
             self.clientSocket.close()
+            
+    def halt(self):
+        self.logger.info('halt called')
+        self.kill_received = True
+        self.mode = Flags.MODE_CLEANUP
+        self.nextMode = Flags.MODE_CLEANUP
