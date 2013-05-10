@@ -3,7 +3,6 @@
 import abc
 from proto import Proto
 from flags import Flags
-import socket
 
 class Packet(object):
     """
@@ -111,14 +110,13 @@ class Packet(object):
         """
         # Read the size of the packet
         psize = bytearray(3)
-        nbytes = socket_in.recv_into(psize, 3)
+        socket_in.recv_into(psize, 3)
         
         size = Packet.getSize(psize)+1
         
         # Read the rest of the packet
         packet_payload = bytearray(size)
-        nbytes = socket_in.recv_into(packet_payload,
-                                     size)
+        socket_in.recv_into(packet_payload, size)
         
         # Combine the chunks
         psize.extend(packet_payload)
