@@ -93,10 +93,10 @@ class Proxy(Plugin):
         packet_type = Packet.getType(packet)
         
         if packet_type == Flags.COM_QUIT:
-            context.logger.trace('COM_QUIT')
+            context.logger.debug('COM_QUIT')
             context.halt()
         elif packet_type == Flags.COM_INIT_DB:
-            context.logger.trace('COM_INIT_DB');
+            context.logger.debug('COM_INIT_DB');
             context.schema = Initdb.loadFromPacket(packet).schema
         elif packet_type == Flags.COM_QUERY:
             context.logger.debug('COM_QUERY')
