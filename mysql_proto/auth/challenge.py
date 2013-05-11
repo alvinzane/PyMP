@@ -5,7 +5,7 @@ from ..proto import Proto
 from ..flags import Flags
 
 class Challenge(Packet):
-    protocolVersion = 0x0a;
+    protocolVersion = 0x0a
     serverVersion = ""
     connectionId = 0
     challenge1 = ""
@@ -59,8 +59,8 @@ class Challenge(Packet):
     
     @staticmethod
     def loadFromPacket(packet):
-        obj = Challenge();
-        proto = Proto(packet, 3);
+        obj = Challenge()
+        proto = Proto(packet, 3)
         
         obj.sequenceId = proto.get_fixed_int(1)
         obj.protocolVersion = proto.get_fixed_int(1)
@@ -77,4 +77,4 @@ class Challenge(Packet):
             obj.challenge2 = proto.get_fixed_str(12)
             proto.get_filler(1)
         
-        return obj;
+        return obj

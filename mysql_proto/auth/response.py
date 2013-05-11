@@ -39,14 +39,14 @@ class Response(Packet):
                 payload.extend( Proto.build_lenenc_str(self.authResponse))
             else:
                 payload.extend( Proto.build_null_str(self.authResponse))
-            payload.extend( Proto.build_null_str(self.schema));
+            payload.extend( Proto.build_null_str(self.schema))
             if self.hasCapabilityFlag(Flags.CLIENT_PLUGIN_AUTH):
-                payload.extend( Proto.build_null_str(self.pluginName));
+                payload.extend( Proto.build_null_str(self.pluginName))
         else:
-            payload.extend( Proto.build_fixed_int(2, self.capabilityFlags));
-            payload.extend( Proto.build_fixed_int(3, self.maxPacketSize));
-            payload.extend( Proto.build_null_str(self.username));
-            payload.extend( Proto.build_null_str(self.authResponse));
+            payload.extend( Proto.build_fixed_int(2, self.capabilityFlags))
+            payload.extend( Proto.build_fixed_int(3, self.maxPacketSize))
+            payload.extend( Proto.build_null_str(self.username))
+            payload.extend( Proto.build_null_str(self.authResponse))
         
         return payload
     
@@ -82,7 +82,7 @@ class Response(Packet):
             obj.username = proto.get_null_str()
             obj.schema = proto.get_null_str()
         
-        return obj;
+        return obj
 
 if __name__ == "__main__":
     import doctest

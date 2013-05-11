@@ -8,7 +8,7 @@ class Packet(object):
     """
     Basic class for all mysql proto classes to inherit from
     """
-    sequenceId = None;
+    sequenceId = None
     
     @abc.abstractmethod
     def getPayload(self):
@@ -21,7 +21,7 @@ class Packet(object):
         """
         Convert a Packet object to a byte array stream
         """
-        payload = self.getPayload();
+        payload = self.getPayload()
         
         # Size is payload + packet size + sequence id
         size = len(payload)

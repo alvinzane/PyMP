@@ -9,7 +9,7 @@ class ChangeUser(Packet):
     authResponse = ""
     schema = ""
     characterSet = 0
-    capabilityFlags = 0;
+    capabilityFlags = 0
     
     def setCapabilityFlag(self, flag):
         self.capabilityFlags |= flag

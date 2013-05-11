@@ -96,7 +96,7 @@ class Proxy(Plugin):
             context.logger.info('COM_QUIT')
             context.halt()
         elif packet_type == Flags.COM_INIT_DB:
-            context.logger.info('COM_INIT_DB');
+            context.logger.info('COM_INIT_DB')
             context.schema = Initdb.loadFromPacket(packet).schema
         elif packet_type == Flags.COM_QUERY:
             context.logger.info('COM_QUERY')

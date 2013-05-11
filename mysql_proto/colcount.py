@@ -5,7 +5,7 @@ from packet import Packet
 from proto import Proto
 
 class ColCount(Packet):
-    colCount = None;
+    colCount = None
     
     def getPayload(self):
         payload = Proto.build_lenenc_int(self.colCount)

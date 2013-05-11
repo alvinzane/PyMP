@@ -40,18 +40,18 @@ class Proto(object):
         """
         packet = bytearray(size)
         if size >= 1:
-            packet[0] = ((value >>  0) & 0xFF);
+            packet[0] = ((value >>  0) & 0xFF)
         if size >= 2:
-            packet[1] = ((value >>  8) & 0xFF);
+            packet[1] = ((value >>  8) & 0xFF)
         if size >= 3:
-            packet[2] = ((value >> 16) & 0xFF);
+            packet[2] = ((value >> 16) & 0xFF)
         if size >= 4:
-            packet[3] = ((value >> 24) & 0xFF);
+            packet[3] = ((value >> 24) & 0xFF)
         if size >= 8:
-            packet[4] = ((value >> 32) & 0xFF);
-            packet[5] = ((value >> 40) & 0xFF);
-            packet[6] = ((value >> 48) & 0xFF);
-            packet[7] = ((value >> 56) & 0xFF);
+            packet[4] = ((value >> 32) & 0xFF)
+            packet[5] = ((value >> 40) & 0xFF)
+            packet[6] = ((value >> 48) & 0xFF)
+            packet[7] = ((value >> 56) & 0xFF)
         return packet
     
     @staticmethod
@@ -167,7 +167,7 @@ abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123\
         
         size = Proto.build_lenenc_int(len(value))
         fixed_str = Proto.build_fixed_str(len(value), value)
-        return size+fixed_str;
+        return size+fixed_str
     
     @staticmethod
     def build_null_str(value):
@@ -181,7 +181,7 @@ abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123\
         >>> Proto.build_null_str('')
         bytearray(b'\\x00')
         """
-        return Proto.build_fixed_str(len(value) + 1, value);
+        return Proto.build_fixed_str(len(value) + 1, value)
     
     @staticmethod
     def build_fixed_str(size, value):
@@ -197,8 +197,8 @@ abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123\
         """
         packet = bytearray(size)
         for i, c in enumerate(value):
-            packet[i] = c;
-        return packet;
+            packet[i] = c
+        return packet
     
     @staticmethod
     def build_eop_str(value):
