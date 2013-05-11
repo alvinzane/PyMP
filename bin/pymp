@@ -45,6 +45,8 @@ def main():
             engine.start()
             engines.append(engine)
             engines = filter(lambda w: w in engines, active_children())
+    except KeyboardInterrupt:
+        pass
     finally:
         serversocket.close()
 
