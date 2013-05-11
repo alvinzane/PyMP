@@ -37,3 +37,6 @@ class Plugin(object):
     
     def cleanup(self, context):
         raise NotImplementedError()
+
+    def shutdown(self, context):
+        raise NotImplementedError()

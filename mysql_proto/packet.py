@@ -3,6 +3,7 @@
 import abc
 from proto import Proto
 from flags import Flags
+import logging
 
 class Packet(object):
     """
@@ -63,7 +64,6 @@ class Packet(object):
         """
         Dumps a packet to the logger
         """
-        import logging
         logger = logging.getLogger('pymp.engine.packet')
         offset = 0
         
@@ -107,10 +107,12 @@ class Packet(object):
         logger.debug(dump)
     
     @staticmethod
-    def read_packet(socket_in):
+    def read_packet(socket_in, direction='unknown'):
         """
         Reads a packet from a socket
         """
+        logger = logging.getLogger('pymp.engine.packet')
+        logger.info('Packet.read_packet %s', direction)
         # Read the size of the packet
         psize = bytearray(3)
         socket_in.recv_into(psize, 3)
@@ -140,7 +142,7 @@ class Packet(object):
         
         # Evil optimization
         if not bufferResultSet:
-            socket_out.sendall(buff)
+            Packet.write_packet(socket_out, buff)
             buff = bytearray()
         
         # Read columns
@@ -149,7 +151,7 @@ class Packet(object):
             
             # Evil optimization
             if not bufferResultSet:
-                socket_out.sendall(packet)
+                Packet.write_packet(socket_out, packet)
             else:
                 buff.extend(packet)
                 
@@ -166,7 +168,7 @@ class Packet(object):
                 
                 # Evil optimization
                 if not bufferResultSet:
-                    socket_out.sendall(packedPacket)
+                    Packet.write_packet(socket_out, packedPacket)
                 else:
                     buff.extend(packedPacket)
                     
@@ -180,7 +182,7 @@ class Packet(object):
                 
         # Evil optimization
         if not bufferResultSet:
-            socket_out.sendall(packedPacket)
+            Packet.write_packet(socket_out, packedPacket)
         else:
             buff.extend(packedPacket)
             
@@ -198,3 +200,14 @@ class Packet(object):
                                                     bufferResultSet=bufferResultSet,
                                                     packedPacketSize=packedPacketSize))
         return buff
+
+    @staticmethod
+    def write_packet(socket_out, packet, direction='unknown'):
+        """
+        Writes a packet to a socket
+        """
+        logger = logging.getLogger('pymp.engine.packet')
+        logger.info('Packet.write_packet %s', direction)
+        Packet.dump(packet)
+        socket_out.sendall(packet)
+        packet = bytearray()

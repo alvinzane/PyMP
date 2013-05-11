@@ -186,6 +186,8 @@ class Engine(multiprocessing.Process):
                 # Set the next mode
                 self.mode = self.nextMode
         finally:
+            for plugin in self.plugins:
+                self.plugins[plugin].shutdown(self)
             self.logger.info('Exiting thread')
             self.clientSocket.close()
             
