@@ -41,8 +41,13 @@ class TestProto(unittest.TestCase):
         
         packet = bytearray()
         
-        # TODO: Get valid packet here
-        return
+        packet.extend(self.hex_ba('2f 00 00 01 0d a6 03 00'))
+        packet.extend(self.hex_ba('00 00 00 01 08 00 00 00'))
+        packet.extend(self.hex_ba('00 00 00 00 00 00 00 00'))
+        packet.extend(self.hex_ba('00 00 00 00 00 00 00 00'))
+        packet.extend(self.hex_ba('00 00 00 00 72 6f 6f 74'))
+        packet.extend(self.hex_ba('00 00 73 79 73 62 65 6e'))
+        packet.extend(self.hex_ba('63 68 00'))
         
         obj = Response.loadFromPacket(packet)
         self.assertEqual(obj.toPacket(), packet)
@@ -151,6 +156,16 @@ class TestProto(unittest.TestCase):
         obj = Reset.loadFromPacket(packet)
         self.assertEqual(obj.toPacket(), packet)
         self.assertEqual(obj.__class__.__name__, 'Reset')
+        
+    def test_COM_QUIT(self):
+        from mysql_proto.com.quit import Quit
+        
+        packet = bytearray()
+        packet.extend(self.hex_ba('01 00 00 00 01'))
+        
+        obj = Quit.loadFromPacket(packet)
+        self.assertEqual(obj.toPacket(), packet)
+        self.assertEqual(obj.__class__.__name__, 'Quit')
         
 if __name__ == "__main__":
     # Initialize Options

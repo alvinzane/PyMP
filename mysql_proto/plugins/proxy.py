@@ -116,6 +116,7 @@ class Proxy(Plugin):
         context.buff.extend(packet)
         
         packetType = Packet.getType(packet)
+        context.logger.debug('Packet type %s', packetType)
         
         if packetType != Flags.OK and packetType != Flags.ERR:
             context.buff.extend(

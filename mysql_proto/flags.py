@@ -97,6 +97,7 @@ class Flags(object):
     CLIENT_MULTI_STATEMENTS             = 0x00010000
     CLIENT_MULTI_RESULTS                = 0x00020000
     CLIENT_PS_MULTI_RESULTS             = 0x00040000
+    CLIENT_PLUGIN_AUTH                  = 0x00080000
     CLIENT_SSL_VERIFY_SERVER_CERT       = 0x40000000
     CLIENT_REMEMBER_OPTIONS             = 0x80000000
 

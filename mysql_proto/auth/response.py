@@ -12,6 +12,7 @@ class Response(Packet):
     username = ""
     authResponse = ""
     schema = ""
+    pluginName = ""
     
     def setCapabilityFlag(self, flag):
         self.capabilityFlags |= flag
@@ -29,16 +30,18 @@ class Response(Packet):
         payload = bytearray()
         
         if self.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
-            payload.extend( Proto.build_fixed_int(4, self.capabilityFlags));
-            payload.extend( Proto.build_fixed_int(4, self.maxPacketSize));
-            payload.extend( Proto.build_fixed_int(1, self.characterSet));
-            payload.extend( Proto.build_fixed_str(23, ""));
-            payload.extend( Proto.build_null_str(self.username));
+            payload.extend( Proto.build_fixed_int(4, self.capabilityFlags))
+            payload.extend( Proto.build_fixed_int(4, self.maxPacketSize))
+            payload.extend( Proto.build_fixed_int(1, self.characterSet))
+            payload.extend( Proto.build_fixed_str(23, ""))
+            payload.extend( Proto.build_null_str(self.username))
             if self.hasCapabilityFlag(Flags.CLIENT_SECURE_CONNECTION):
-                payload.extend( Proto.build_lenenc_str(self.authResponse));
+                payload.extend( Proto.build_lenenc_str(self.authResponse))
             else:
-                payload.extend( Proto.build_null_str(self.authResponse));
-            payload.extend( Proto.build_fixed_str(len(self.schema), self.schema));
+                payload.extend( Proto.build_null_str(self.authResponse))
+            payload.extend( Proto.build_null_str(self.schema));
+            if self.hasCapabilityFlag(Flags.CLIENT_PLUGIN_AUTH):
+                payload.extend( Proto.build_null_str(self.pluginName));
         else:
             payload.extend( Proto.build_fixed_int(2, self.capabilityFlags));
             payload.extend( Proto.build_fixed_int(3, self.maxPacketSize));
@@ -68,7 +71,10 @@ class Response(Packet):
             else:
                 obj.authResponse = proto.get_lenenc_str()
             
-            obj.schema = proto.get_eop_str()
+            obj.schema = proto.get_null_str()
+            
+            if obj.hasCapabilityFlag(Flags.CLIENT_PLUGIN_AUTH):
+                obj.pluginName = proto.get_null_str()
             
         else:
             obj.capabilityFlags = proto.get_fixed_int(2)
