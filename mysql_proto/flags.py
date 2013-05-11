@@ -160,8 +160,9 @@ class Flags(object):
 
     RS_OK                               = 0
     RS_FULL                             = 1
-    RS_COL_DEF                          = 2
-    RS_DATA_FILE                        = 3
+    RS_HALF                             = 2
+    RS_COL_DEF                          = 3
+    RS_DATA_FILE                        = 4
     
     CS_latin1_swedish_ci                = 8
     CS_utf8_general_ci                  = 33

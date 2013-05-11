@@ -131,7 +131,8 @@ class Packet(object):
     
     @staticmethod
     def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
-                             packedPacketSize = 65535):
+                             packedPacketSize=65535,
+                             resultsetType=Flags.RS_FULL):
         """
         Reads a full result set
         """
@@ -146,7 +147,7 @@ class Packet(object):
             buff = bytearray()
         
         # Read columns
-        for i in xrange(0, colCount+1):
+        for i in xrange(0, colCount):
             packet = Packet.read_packet(socket_in)
             
             # Evil optimization
@@ -154,6 +155,24 @@ class Packet(object):
                 Packet.write_packet(socket_out, packet)
             else:
                 buff.extend(packet)
+                
+        # Check for OK or ERR
+        # Stop on ERR
+        packet = Packet.read_packet(socket_in)
+        packetType = Packet.getType(packet)
+        
+        # Evil optimization
+        if not bufferResultSet:
+            Packet.write_packet(socket_out, packet)
+        else:
+            buff.extend(packet)
+            
+        # Error? Stop now
+        if packetType == Flags.ERR:
+            return buff
+        
+        if packetType == Flags.EOF and resultsetType == Flags.RS_HALF:
+            return buff
                 
         packedPacket = bytearray()
         
@@ -194,11 +213,11 @@ class Packet(object):
         if EOF.loadFromPacket(packet).hasStatusFlag(
             Flags.SERVER_MORE_RESULTS_EXISTS):
             buff.extend(Packet.read_packet(socket_in))
-            buff.extend(Packet.read_full_result_set(socket_in,
-                                                    socket_out,
-                                                    buff,
-                                                    bufferResultSet=bufferResultSet,
-                                                    packedPacketSize=packedPacketSize))
+            buff.extend(Packet.read_full_result_set(
+                socket_in, socket_out, buff,
+                bufferResultSet=bufferResultSet,
+                packedPacketSize=packedPacketSize,
+                resultsetType=resultsetType))
         return buff
 
     @staticmethod

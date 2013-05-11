@@ -86,6 +86,7 @@ class Proxy(Plugin):
     def read_query(self, context):
         context.logger.info('Proxy.read_query')
         context.bufferResultSet = False
+        context.expectedResultSet = Flags.RS_FULL
         
         packet = Packet.read_packet(context.clientSocket, 'Client')
         context.sequenceId = Packet.getSequenceId(packet)
@@ -102,6 +103,9 @@ class Proxy(Plugin):
         elif packet_type == Flags.COM_QUERY:
             context.logger.info('COM_QUERY')
             context.query = Query.loadFromPacket(packet).query
+        elif packet_type == Flags.COM_FIELD_LIST:
+            context.logger.info('COM_FIELD_LIST')
+            context.expectedResultSet = Flags.RS_HALF
             
         context.buff.extend(packet)
     
@@ -123,7 +127,8 @@ class Proxy(Plugin):
                 self.serverSocket,
                 context.clientSocket,
                 packet,
-                context.bufferResultSet
+                context.bufferResultSet,
+                resultsetType=context.expectedResultSet
             )
         else:
             context.buff.extend(packet)
