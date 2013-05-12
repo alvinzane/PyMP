@@ -1,9 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python -OO -u
 # coding=utf-8
 
 import argparse
 import configobj
-import logging
 import sys
 import os
 import socket
@@ -15,6 +14,7 @@ sys.path.append('.')
 
 from mysql_proto.engine import Engine
 
+
 def main():
     # Setup arg handling
     parser = argparse.ArgumentParser(description='Python MySQL Proxy')
@@ -25,7 +25,7 @@ def main():
 
     # Initialize Config
     config = configobj.ConfigObj(os.path.abspath(args.config))
-        
+
     # Start listening to port...
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -34,9 +34,9 @@ def main():
                        int(config['pymp']['port'])))
     serversocket.listen(int(
         config['pymp']['max_outstanding_connection_requests']))
-    
+
     engines = []
-    
+
     try:
         while True:
             (clientsocket, address) = serversocket.accept()
