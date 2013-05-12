@@ -46,7 +46,7 @@ class Proxy(Plugin):
     def send_handshake(self, context):
         context.logger.info('Proxy.send_handshake')
         context.clientSocket.sendall(context.buff)
-        del context.buff[:]
+        context.buff = bytearray()
     
     def read_auth(self, context):
         context.logger.info('Proxy.read_auth')
@@ -69,7 +69,7 @@ class Proxy(Plugin):
     def send_auth(self, context):
         context.logger.info('Proxy.send_auth')
         self.serverSocket.sendall(context.buff)
-        del context.buff[:]
+        context.buff = bytearray()
     
     def read_auth_result(self, context):
         context.logger.info('Proxy.read_auth_result')
@@ -81,7 +81,7 @@ class Proxy(Plugin):
     def send_auth_result(self, context):
         context.logger.info('Proxy.send_auth_result')
         context.clientSocket.sendall(context.buff)
-        del context.buff[:]
+        context.buff = bytearray()
     
     def read_query(self, context):
         context.logger.info('Proxy.read_query')
@@ -112,7 +112,7 @@ class Proxy(Plugin):
     def send_query(self, context):
         context.logger.info('Proxy.send_query')
         self.serverSocket.sendall(context.buff)
-        del context.buff[:]
+        context.buff = bytearray()
     
     def read_query_result(self, context):
         context.logger.info('Proxy.read_query_result')
@@ -135,7 +135,7 @@ class Proxy(Plugin):
     def send_query_result(self, context):
         context.logger.info('Proxy.send_query_result')
         context.clientSocket.sendall(context.buff)
-        del context.buff[:]
+        context.buff = bytearray()
     
     def cleanup(self, context):
         context.logger.info('Proxy.cleanup')

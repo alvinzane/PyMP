@@ -206,10 +206,13 @@ class Packet(object):
         
         # Multiple result sets?
         if moreResults:
-            buff.extend(Packet.read_packet(socket_in))
-            Packet.read_full_result_set(
-                socket_in, socket_out, buff,
-                bufferResultSet=bufferResultSet,
-                packedPacketSize=packedPacketSize,
-                resultsetType=resultsetType)
+            buff.extend(
+                Packet.read_full_result_set(
+                    socket_in,
+                    socket_out,
+                    Packet.read_packet(socket_in),
+                    bufferResultSet=bufferResultSet,
+                    packedPacketSize=packedPacketSize,
+                    resultsetType=resultsetType)
+            )
         return
