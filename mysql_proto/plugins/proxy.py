@@ -1,16 +1,18 @@
 # coding=utf-8
 
-from plugin import Plugin
-import socket
-from ..packet import Packet
 from ..auth.challenge import Challenge
 from ..auth.response import Response
-from ..flags import Flags
-from ..resultset import ResultSet
 from ..com.initdb import Initdb
 from ..com.query import Query
 from ..com.quit import Quit
-
+from ..flags import Flags
+from ..packet import read_packet
+from ..packet import getType
+from ..packet import getSequenceId
+from ..packet import read_full_result_set
+from plugin import Plugin
+from ..resultset import ResultSet
+import socket
 
 class Proxy(Plugin):
     serverSocket = None
@@ -33,7 +35,7 @@ class Proxy(Plugin):
                                     )))
 
     def read_handshake(self, context):
-        packet = Packet.read_packet(self.serverSocket)
+        packet = read_packet(self.serverSocket)
         context.authChallenge = Challenge.loadFromPacket(packet)
         context.authChallenge.removeCapabilityFlag(Flags.CLIENT_COMPRESS)
         context.authChallenge.removeCapabilityFlag(Flags.CLIENT_SSL)
@@ -48,7 +50,7 @@ class Proxy(Plugin):
         context.buff = bytearray()
 
     def read_auth(self, context):
-        packet = Packet.read_packet(context.clientSocket)
+        packet = read_packet(context.clientSocket)
         context.authReply = Response.loadFromPacket(packet)
 
         if not context.authReply.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
@@ -69,8 +71,8 @@ class Proxy(Plugin):
         context.buff = bytearray()
 
     def read_auth_result(self, context):
-        packet = Packet.read_packet(self.serverSocket)
-        if Packet.getType(packet) != Flags.OK:
+        packet = read_packet(self.serverSocket)
+        if getType(packet) != Flags.OK:
             context.logger.fatal('Auth is not okay!')
         context.buff.extend(packet)
 
@@ -82,11 +84,11 @@ class Proxy(Plugin):
         context.bufferResultSet = False
         context.expectedResultSet = Flags.RS_FULL
 
-        packet = Packet.read_packet(context.clientSocket)
-        context.sequenceId = Packet.getSequenceId(packet)
+        packet = read_packet(context.clientSocket)
+        context.sequenceId = getSequenceId(packet)
         context.logger.info('Client sequenceId: %s' % context.sequenceId)
 
-        packet_type = Packet.getType(packet)
+        packet_type = getType(packet)
 
         if packet_type == Flags.COM_QUIT:
             context.halt()
@@ -104,14 +106,14 @@ class Proxy(Plugin):
         context.buff = bytearray()
 
     def read_query_result(self, context):
-        packet = Packet.read_packet(self.serverSocket)
-        context.sequenceId = Packet.getSequenceId(packet)
+        packet = read_packet(self.serverSocket)
+        context.sequenceId = getSequenceId(packet)
 
-        packetType = Packet.getType(packet)
+        packetType = getType(packet)
         context.buff.extend(packet)
 
         if packetType != Flags.OK and packetType != Flags.ERR:
-            Packet.read_full_result_set(
+            read_full_result_set(
                 self.serverSocket,
                 context.clientSocket,
                 context.buff,
