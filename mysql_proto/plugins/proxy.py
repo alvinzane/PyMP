@@ -45,8 +45,8 @@ class Proxy(Plugin):
     
     def send_handshake(self, context):
         context.logger.info('Proxy.send_handshake')
-        Packet.write_packet(context.clientSocket, context.buff, 'Client')
-        context.buff = bytearray()
+        context.clientSocket.sendall(context.buff)
+        del context.buff[:]
     
     def read_auth(self, context):
         context.logger.info('Proxy.read_auth')
@@ -68,8 +68,8 @@ class Proxy(Plugin):
     
     def send_auth(self, context):
         context.logger.info('Proxy.send_auth')
-        Packet.write_packet(self.serverSocket, context.buff, 'MySQL')
-        context.buff = bytearray()
+        self.serverSocket.sendall(context.buff)
+        del context.buff[:]
     
     def read_auth_result(self, context):
         context.logger.info('Proxy.read_auth_result')
@@ -80,8 +80,8 @@ class Proxy(Plugin):
     
     def send_auth_result(self, context):
         context.logger.info('Proxy.send_auth_result')
-        Packet.write_packet(context.clientSocket, context.buff, 'Client')
-        context.buff = bytearray()
+        context.clientSocket.sendall(context.buff)
+        del context.buff[:]
     
     def read_query(self, context):
         context.logger.info('Proxy.read_query')
@@ -111,8 +111,8 @@ class Proxy(Plugin):
     
     def send_query(self, context):
         context.logger.info('Proxy.send_query')
-        Packet.write_packet(self.serverSocket, context.buff, 'MySQL')
-        context.buff = bytearray()
+        self.serverSocket.sendall(context.buff)
+        del context.buff[:]
     
     def read_query_result(self, context):
         context.logger.info('Proxy.read_query_result')
@@ -121,23 +121,21 @@ class Proxy(Plugin):
         
         packetType = Packet.getType(packet)
         context.logger.debug('Packet type %s', packetType)
+        context.buff.extend(packet)
         
         if packetType != Flags.OK and packetType != Flags.ERR:
-            context.buff = Packet.read_full_result_set(
+            Packet.read_full_result_set(
                 self.serverSocket,
                 context.clientSocket,
-                packet,
+                context.buff,
                 context.bufferResultSet,
                 resultsetType=context.expectedResultSet
             )
-        else:
-            context.buff.extend(packet)
-        
     
     def send_query_result(self, context):
         context.logger.info('Proxy.send_query_result')
-        Packet.write_packet(context.clientSocket, context.buff, 'Client')
-        context.buff = bytearray()
+        context.clientSocket.sendall(context.buff)
+        del context.buff[:]
     
     def cleanup(self, context):
         context.logger.info('Proxy.cleanup')
@@ -146,5 +144,5 @@ class Proxy(Plugin):
         context.logger.info('Proxy.shutdown')
         obj = Quit()
         obj.sequenceId = 0
-        Packet.write_packet(self.serverSocket, obj.toPacket(), 'MySQL')
+        self.serverSocket.sendall(obj.toPacket())
         self.serverSocket.close()

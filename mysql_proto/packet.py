@@ -125,7 +125,8 @@ class Packet(object):
         
         # Combine the chunks
         psize.extend(packet_payload)
-        Packet.dump(psize)
+        if logger.isEnabledFor(logging.DEBUG):
+            Packet.dump(psize)
         
         return psize
     
@@ -143,8 +144,8 @@ class Packet(object):
         
         # Evil optimization
         if not bufferResultSet:
-            Packet.write_packet(socket_out, buff)
-            buff = bytearray()
+            socket_out.sendall(buff)
+            del buff[:]
         
         # Read columns
         for i in xrange(0, colCount):
@@ -152,7 +153,7 @@ class Packet(object):
             
             # Evil optimization
             if not bufferResultSet:
-                Packet.write_packet(socket_out, packet)
+                socket_out.sendall(packet)
             else:
                 buff.extend(packet)
                 
@@ -163,70 +164,52 @@ class Packet(object):
         
         # Evil optimization
         if not bufferResultSet:
-            Packet.write_packet(socket_out, packet)
+            socket_out.sendall(packet)
         else:
             buff.extend(packet)
             
         # Error? Stop now
         if packetType == Flags.ERR:
-            return buff
+            return
         
         if packetType == Flags.EOF and resultsetType == Flags.RS_HALF:
-            return buff
+            return
                 
-        packedPacket = bytearray()
-        
         # Read rows
         while True:
             packet = Packet.read_packet(socket_in)
             packetType = Packet.getType(packet)
+            if packetType == Flags.EOF:
+                moreResults = EOF.loadFromPacket(packet).hasStatusFlag(
+                    Flags.SERVER_MORE_RESULTS_EXISTS)
             
-            if len(packedPacket) + len(packet) > packedPacketSize:
-                subsize = packedPacketSize - len(packedPacket)
-                packedPacket.extend(packet[0:subsize])
-                
-                # Evil optimization
-                if not bufferResultSet:
-                    Packet.write_packet(socket_out, packedPacket)
-                else:
-                    buff.extend(packedPacket)
-                    
-                packedPacket = bytearray(packet[subsize:])
-                
+            # Evil optimization
+            if not bufferResultSet:
+                socket_out.sendall(packet)
             else:
-                packedPacket.extend(packet)
+                buff.extend(packet)
+                if packedPacketSize > 0 and len(buff) > packedPacketSize:
+                    socket_out.sendall(buff)
+                    del buff[:]
                 
             if packetType == Flags.EOF or packetType == Flags.ERR:
                 break
                 
         # Evil optimization
         if not bufferResultSet:
-            Packet.write_packet(socket_out, packedPacket)
-        else:
-            buff.extend(packedPacket)
+            socket_out.sendall(buff)
+            del buff[:]
             
         # Show Create Table or similar?
         if packetType == Flags.ERR:
-            return buff
+            return
         
         # Multiple result sets?
-        if EOF.loadFromPacket(packet).hasStatusFlag(
-            Flags.SERVER_MORE_RESULTS_EXISTS):
+        if moreResults:
             buff.extend(Packet.read_packet(socket_in))
-            buff.extend(Packet.read_full_result_set(
+            Packet.read_full_result_set(
                 socket_in, socket_out, buff,
                 bufferResultSet=bufferResultSet,
                 packedPacketSize=packedPacketSize,
-                resultsetType=resultsetType))
-        return buff
-
-    @staticmethod
-    def write_packet(socket_out, packet, direction='unknown'):
-        """
-        Writes a packet to a socket
-        """
-        logger = logging.getLogger('pymp.engine.packet')
-        logger.info('Packet.write_packet %s', direction)
-        Packet.dump(packet)
-        socket_out.sendall(packet)
-        packet = bytearray()
+                resultsetType=resultsetType)
+        return
