@@ -1,11 +1,22 @@
 #!/usr/bin/env python -OO -u
 # coding=utf-8
 
-import argparse
+__doc__ = """
+Python MySQL Proxy
+
+Usage:
+  pymp [-c <file>]
+  pymp [--config=<file>]
+
+Options:
+ -c <file> --config=<file>    Path to config file [default: conf/pymp.conf]
+"""
+
 import configobj
 import sys
 import os
 import socket
+from docopt import docopt
 
 from multiprocessing.reduction import reduce_handle
 from multiprocessing import active_children
@@ -16,15 +27,10 @@ from mysql_proto.engine import Engine
 
 
 def main():
-    # Setup arg handling
-    parser = argparse.ArgumentParser(description='Python MySQL Proxy')
-    # TODO: Set this to default to a sane path
-    parser.add_argument('-c', '--config', default='conf/pymp.conf')
-
-    args = parser.parse_args()
+    args = docopt(__doc__, version='pymp 0.0.1')
 
     # Initialize Config
-    config = configobj.ConfigObj(os.path.abspath(args.config))
+    config = configobj.ConfigObj(os.path.abspath(args['--config']))
 
     # Start listening to port...
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
