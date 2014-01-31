@@ -13,7 +13,7 @@ class TestProto(unittest.TestCase):
 
     def hex_ba(self, string):
         ba = bytearray()
-        fields = string.split(' ')
+        fields = string.strip().split(' ')
         for field in fields:
             ba_tmp = bytearray(1)
             ba_tmp[0] = int(field, 16)
@@ -157,6 +157,20 @@ class TestProto(unittest.TestCase):
         obj = Reset.loadFromPacket(packet)
         self.assertEqual(obj.toPacket(), packet)
         self.assertEqual(obj.__class__.__name__, 'Reset')
+
+    def test_CHALLENGE(self):
+        from mysql_proto.auth.challenge import Challenge
+        from mysql_proto.auth.challenge import __TEST_PACKETS__
+
+        for packetdata in __TEST_PACKETS__:
+            packet = bytearray()
+            for data in packetdata:
+                packet.extend(self.hex_ba(data))
+
+            obj = Challenge.loadFromPacket(packet)
+            self.assertEqual(obj.toPacket(), packet)
+            self.assertEqual(obj.__class__.__name__, 'Challenge')
+
 
 if __name__ == "__main__":
     # Initialize Options

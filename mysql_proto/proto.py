@@ -9,6 +9,9 @@ class Proto(object):
         self.packet = packet
         self.offset = offset
 
+    def has_remaining_data(self):
+        return len(self.packet) - self.offset > 0
+
     @staticmethod
     def build_fixed_int(size, value):
         """
