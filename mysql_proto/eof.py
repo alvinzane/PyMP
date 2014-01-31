@@ -25,8 +25,8 @@ class EOF(Packet):
         payload = bytearray()
         
         payload.extend(Proto.build_byte(Flags.EOF))
-        payload.extend(Proto.build_fixed_int(2, self.statusFlags))
         payload.extend(Proto.build_fixed_int(2, self.warnings))
+        payload.extend(Proto.build_fixed_int(2, self.statusFlags))
         
         return payload
     
