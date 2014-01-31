@@ -14,10 +14,13 @@ from plugin import Plugin
 from ..resultset import ResultSet
 import socket
 
+
 class Proxy(Plugin):
-    serverSocket = None
+    __slots__ = ('serverSocket')
 
     def init(self, context):
+        super(Proxy, self).__init__()
+
         context.logger.info('Proxy.init')
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serverSocket.setsockopt(socket.IPPROTO_TCP,
@@ -27,12 +30,9 @@ class Proxy(Plugin):
                                      socket.SO_KEEPALIVE,
                                      1)
         self.serverSocket.settimeout(None)
-        self.serverSocket.connect((context.config[
-            'plugins']['Proxy']['remoteHost'],
-                                   int(
-                                    context.config[
-                                        'plugins']['Proxy']['remotePort']
-                                    )))
+        self.serverSocket.connect(
+            (context.config['plugins']['Proxy']['remoteHost'],
+             int(context.config['plugins']['Proxy']['remotePort'])))
 
     def read_handshake(self, context):
         packet = read_packet(self.serverSocket)

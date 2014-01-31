@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+
 class Flags(object):
     # Connection opened
     MODE_INIT                           = 0
@@ -28,7 +29,7 @@ class Flags(object):
     MODE_CLEANUP                        = 11
 
     # Packet types
-    COM_SLEEP                           = 0x00 # deprecated
+    COM_SLEEP                           = 0x00  # deprecated
     COM_QUIT                            = 0x01
     COM_INIT_DB                         = 0x02
     COM_QUERY                           = 0x03
@@ -38,13 +39,13 @@ class Flags(object):
     COM_REFRESH                         = 0x07
     COM_SHUTDOWN                        = 0x08
     COM_STATISTICS                      = 0x09
-    COM_PROCESS_INFO                    = 0x0a # deprecated
-    COM_CONNECT                         = 0x0b # deprecated
+    COM_PROCESS_INFO                    = 0x0a  # deprecated
+    COM_CONNECT                         = 0x0b  # deprecated
     COM_PROCESS_KILL                    = 0x0c
     COM_DEBUG                           = 0x0d
     COM_PING                            = 0x0e
-    COM_TIME                            = 0x0f # deprecated
-    COM_DELAYED_INSERT                  = 0x10 # deprecated
+    COM_TIME                            = 0x0f  # deprecated
+    COM_DELAYED_INSERT                  = 0x10  # deprecated
     COM_CHANGE_USER                     = 0x11
     COM_BINLOG_DUMP                     = 0x12
     COM_TABLE_DUMP                      = 0x13
@@ -57,8 +58,8 @@ class Flags(object):
     COM_STMT_RESET                      = 0x1a
     COM_SET_OPTION                      = 0x1b
     COM_STMT_FETCH                      = 0x1c
-    COM_DAEMON                          = 0x1d # deprecated
-    COM_UNKNOWN                         = 0xff # bad!
+    COM_DAEMON                          = 0x1d  # deprecated
+    COM_UNKNOWN                         = 0xff  # bad!
 
     OK                                  = 0x00
     ERR                                 = 0xff
@@ -163,11 +164,11 @@ class Flags(object):
     RS_HALF                             = 2
     RS_COL_DEF                          = 3
     RS_DATA_FILE                        = 4
-    
+
     CS_latin1_swedish_ci                = 8
     CS_utf8_general_ci                  = 33
     CS_binary                           = 63
-    
+
 
 if __name__ == "__main__":
     import doctest

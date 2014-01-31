@@ -8,7 +8,10 @@ class Packet(object):
     """
     Basic class for all mysql proto classes to inherit from
     """
-    sequenceId = None
+    __slots__ = ('sequenceId',)
+
+    def __init__(self):
+        self.sequenceId = None
 
     def getPayload(self):
         """
@@ -33,11 +36,13 @@ class Packet(object):
 
         return packet
 
+
 def getSize(packet):
     """
     Returns a specified packet size
     """
     return Proto(packet).get_fixed_int(3)
+
 
 def getType(packet):
     """
@@ -45,11 +50,13 @@ def getType(packet):
     """
     return packet[4]
 
+
 def getSequenceId(packet):
     """
     Returns the Sequence ID for the given packet
     """
     return Proto(packet, 3).get_fixed_int(1)
+
 
 def dump(packet):
     """
@@ -84,8 +91,8 @@ def dump(packet):
                 break
             c = chr(packet[offset + x])
             if (len(c) > 1
-                 or packet[offset + x] < 32
-                 or packet[offset + x] == 255):
+                    or packet[offset + x] < 32
+                    or packet[offset + x] == 255):
                 dump += '.'
             else:
                 dump += c
@@ -97,6 +104,7 @@ def dump(packet):
         offset += 16
 
     logger.debug(dump)
+
 
 def read_packet(socket_in):
     """
@@ -118,6 +126,7 @@ def read_packet(socket_in):
         dump(psize)
 
     return psize
+
 
 def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
                          packedPacketSize=65535,

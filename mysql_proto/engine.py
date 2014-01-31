@@ -11,6 +11,8 @@ import logging
 
 # Define our own log formatter to handle the removal of the date
 class EngineLogFormat(logging.Formatter):
+    __slots__ = ('converter')
+
     converter = datetime.datetime.fromtimestamp
 
     def formatTime(self, record, datefmt=None):
@@ -93,8 +95,8 @@ class Engine(multiprocessing.Process):
             else:
                 self.logger.setLevel(logging.WARNING)
                 formatter = logging.Formatter('[%(asctime)s %(process)d] '
-                                            + '%(filename)s:%(lineno)d '
-                                            + '%(message)s')
+                                              + '%(filename)s:%(lineno)d '
+                                              + '%(message)s')
 
             streamHandler.setFormatter(formatter)
             streamHandler.setLevel(logging.DEBUG)

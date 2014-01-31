@@ -4,13 +4,18 @@
 from packet import Packet
 from proto import Proto
 
+
 class ColCount(Packet):
-    colCount = None
-    
+    __slots__ = ('colCount',) + Packet.__slots__
+
+    def __init__(self):
+        super(ColCount, self).__init__()
+        self.colCount = None
+
     def getPayload(self):
         payload = Proto.build_lenenc_int(self.colCount)
         return payload
-    
+
     @staticmethod
     def loadFromPacket(packet):
         """
@@ -32,7 +37,7 @@ class ColCount(Packet):
         proto = Proto(packet, 3)
         obj.sequenceId = proto.get_fixed_int(1)
         obj.colCount = proto.get_lenenc_int()
-        
+
         return obj
 
 if __name__ == "__main__":

@@ -5,20 +5,25 @@ from packet import Packet
 from proto import Proto
 from flags import Flags
 
+
 class Row(Packet):
-    rowType = Flags.ROW_TYPE_TEXT
-    colType = Flags.MYSQL_TYPE_VAR_STRING
-    data = list()
-    
+    __slots__ = ('rowType', 'colType', 'data') + Packet.__slots__
+
     def __init__(self, *args, **kwargs):
+        super(Row, self).__init__()
+
+        self.rowType = Flags.ROW_TYPE_TEXT
+        self.colType = Flags.MYSQL_TYPE_VAR_STRING
+        self.data = list()
+
         for x in args:
             self.data.append(x)
         for x in kwargs:
             self.data.append(x)
-    
+
     def getPayload(self):
         payload = bytearray()
-        
+
         for col in self.data:
             if self.rowType == Flags.ROW_TYPE_TEXT:
                 if isinstance(col, basestring):
@@ -33,18 +38,18 @@ class Row(Packet):
                 raise NotImplementedError()
             else:
                 raise NotImplementedError()
-        
+
         return payload
-    
+
     @staticmethod
     def loadFromPacket(packet):
         obj = Row()
         proto = Proto(packet, 3)
-        
+
         obj.sequenceId = proto.get_fixed_int(1)
-        
+
         # TODO: Extract row data here
-        
+
         return obj
 
 if __name__ == "__main__":
