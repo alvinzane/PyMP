@@ -5,11 +5,13 @@ from ..packet import Packet
 from ..proto import Proto
 from .. import flags as Flags
 
+import collections
+
 
 class Response(Packet):
     __slots__ = ('capabilityFlags', 'maxPacketSize', 'characterSet',
                  'username', 'authResponse', 'schema',
-                 'pluginName') + Packet.__slots__
+                 'pluginName', 'clientAttributes') + Packet.__slots__
 
     def __init__(self):
         super(Response, self).__init__()
@@ -20,6 +22,7 @@ class Response(Packet):
         self.authResponse = ''
         self.schema = ''
         self.pluginName = ''
+        self.clientAttributes = collections.OrderedDict()
 
     def setCapabilityFlag(self, flag):
         self.capabilityFlags |= flag
@@ -40,15 +43,34 @@ class Response(Packet):
             payload.extend(Proto.build_fixed_int(4, self.capabilityFlags))
             payload.extend(Proto.build_fixed_int(4, self.maxPacketSize))
             payload.extend(Proto.build_fixed_int(1, self.characterSet))
-            payload.extend(Proto.build_fixed_str(23, ''))
+            payload.extend(Proto.build_filler(23))
             payload.extend(Proto.build_null_str(self.username))
-            if self.hasCapabilityFlag(Flags.CLIENT_SECURE_CONNECTION):
-                payload.extend(Proto.build_lenenc_str(self.authResponse))
+            
+            if self.hasCapabilityFlag(Flags.CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA):
+                payload.extend(Proto.build_lenenc_int(len(self.authResponse)))
+                payload.extend(Proto.build_fixed_str(len(self.authResponse),
+                                                     self.authResponse))
+            elif self.hasCapabilityFlag(Flags.CLIENT_SECURE_CONNECTION):
+                payload.extend(Proto.build_lenenc_int(len(self.authResponse)))
+                payload.extend(Proto.build_fixed_str(len(self.authResponse),
+                                                     self.authResponse))
             else:
                 payload.extend(Proto.build_null_str(self.authResponse))
-            payload.extend(Proto.build_null_str(self.schema))
+                
+            if self.hasCapabilityFlag(Flags.CLIENT_CONNECT_WITH_DB):
+                payload.extend(Proto.build_null_str(self.schema))
+            
             if self.hasCapabilityFlag(Flags.CLIENT_PLUGIN_AUTH):
                 payload.extend(Proto.build_null_str(self.pluginName))
+                
+            if self.hasCapabilityFlag(Flags.CLIENT_CONNECT_ATTRS):
+                attributes = bytearray()
+                for k,v in self.clientAttributes.items():
+                    attributes.extend(Proto.build_lenenc_str(k))
+                    attributes.extend(Proto.build_lenenc_str(v))
+                payload.extend(Proto.build_lenenc_int(len(attributes)))
+                payload.extend(attributes)
+                
         else:
             payload.extend(Proto.build_fixed_int(2, self.capabilityFlags))
             payload.extend(Proto.build_fixed_int(3, self.maxPacketSize))
@@ -74,18 +96,30 @@ class Response(Packet):
             obj.capabilityFlags = proto.get_fixed_int(4)
             obj.maxPacketSize = proto.get_fixed_int(4)
             obj.characterSet = proto.get_fixed_int(1)
-            proto.get_fixed_str(23)
+            proto.get_filler(23)
             obj.username = proto.get_null_str()
-
-            if obj.hasCapabilityFlag(Flags.CLIENT_SECURE_CONNECTION):
-                obj.authResponse = proto.get_null_str()
+            
+            if obj.hasCapabilityFlag(Flags.CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA):
+                authResponseLen = proto.get_lenenc_int()
+                obj.authResponse = proto.get_fixed_str(authResponseLen)
+            elif obj.hasCapabilityFlag(Flags.CLIENT_SECURE_CONNECTION):
+                authResponseLen = proto.get_lenenc_int()
+                obj.authResponse = proto.get_fixed_str(authResponseLen)
             else:
-                obj.authResponse = proto.get_lenenc_str()
+                obj.authResponse = proto.get_null_str()
 
-            obj.schema = proto.get_null_str()
+            if obj.hasCapabilityFlag(Flags.CLIENT_CONNECT_WITH_DB):
+                obj.schema = proto.get_null_str()
 
             if obj.hasCapabilityFlag(Flags.CLIENT_PLUGIN_AUTH):
                 obj.pluginName = proto.get_null_str()
+                
+            if obj.hasCapabilityFlag(Flags.CLIENT_CONNECT_ATTRS):
+                attribute_length = proto.get_lenenc_int()
+                while proto.has_remaining_data():
+                    k = proto.get_lenenc_str()
+                    v = proto.get_lenenc_str()
+                    obj.clientAttributes[k] = v
 
         else:
             obj.capabilityFlags = proto.get_fixed_int(2)
