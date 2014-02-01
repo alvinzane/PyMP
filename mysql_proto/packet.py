@@ -1,7 +1,8 @@
 # coding=utf-8
 
 from proto import Proto
-from flags import Flags
+import flags as Flags
+import logging
 
 
 class Packet(object):
@@ -62,7 +63,6 @@ def dump(packet):
     """
     Dumps a packet to the logger
     """
-    import logging
     logger = logging.getLogger('pymp.engine.packet.dump')
     offset = 0
 

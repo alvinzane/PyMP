@@ -2,7 +2,7 @@
 
 from ..packet import Packet
 from ..proto import Proto
-from ..flags import Flags
+from .. import flags as Flags
 
 
 class Query(Packet):

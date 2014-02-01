@@ -3,7 +3,7 @@
 
 from ..packet import Packet
 from ..proto import Proto
-from ..flags import Flags
+from .. import flags as Flags
 
 
 class Response(Packet):
@@ -53,7 +53,11 @@ class Response(Packet):
             payload.extend(Proto.build_fixed_int(2, self.capabilityFlags))
             payload.extend(Proto.build_fixed_int(3, self.maxPacketSize))
             payload.extend(Proto.build_null_str(self.username))
-            payload.extend(Proto.build_null_str(self.authResponse))
+            if self.hasCapabilityFlag(Flags.CLIENT_CONNECT_WITH_DB):
+                payload.extend(Proto.build_null_str(self.authResponse))
+                payload.extend(Proto.build_null_str(self.schema))
+            else:
+                payload.extend(Proto.build_eop_str(self.authResponse))
 
         return payload
 
@@ -87,12 +91,22 @@ class Response(Packet):
             obj.capabilityFlags = proto.get_fixed_int(2)
             obj.maxPacketSize = proto.get_fixed_int(3)
             obj.username = proto.get_null_str()
-            obj.schema = proto.get_null_str()
+            if obj.hasCapabilityFlag(Flags.CLIENT_CONNECT_WITH_DB):
+                obj.authResponse = proto.get_null_str()
+                obj.schema = proto.get_null_str()
+            else:
+                obj.authResponse = proto.get_eop_str()
 
         return obj
 
 
 __TEST_PACKETS__ = [
+    # HandshakeResponse320
+    [
+      '11 00 00 01 85 24 00 00',
+      '00 6f 6c 64 00 47 44 53',
+      '43 51 59 52 5f',
+    ],
     #
     [
         '2f 00 00 01 0d a6 03 00',
