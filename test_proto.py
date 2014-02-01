@@ -15,27 +15,14 @@ class TestProto(unittest.TestCase):
         ba = bytearray()
         fields = string.strip().split(' ')
         for field in fields:
+            if field == '':
+                continue
             ba_tmp = bytearray(1)
             ba_tmp[0] = int(field, 16)
             ba.extend(ba_tmp)
         return ba
 
-    def test_auth_Challenge(self):
-        from mysql_proto.auth.challenge import Challenge
-
-        packet = bytearray()
-        packet.extend(self.hex_ba('36 00 00 00 0a 35 2e 35'))
-        packet.extend(self.hex_ba('2e 32 2d 6d 32 00 0b 00'))
-        packet.extend(self.hex_ba('00 00 64 76 48 40 49 2d'))
-        packet.extend(self.hex_ba('43 4a 00 ff f7 08 02 00'))
-        packet.extend(self.hex_ba('00 00 00 00 00 00 00 00'))
-        packet.extend(self.hex_ba('00 00 00 00 00 2a 34 64'))
-        packet.extend(self.hex_ba('7c 63 5a 77 6b 34 5e 5d'))
-        packet.extend(self.hex_ba('3a 00'))
-
-        obj = Challenge.loadFromPacket(packet)
-        self.assertEqual(obj.toPacket(), packet)
-        self.assertEqual(obj.__class__.__name__, 'Challenge')
+    # OLD Style tests...
 
     def test_auth_Response(self):
         from mysql_proto.auth.response import Response
@@ -158,6 +145,8 @@ class TestProto(unittest.TestCase):
         self.assertEqual(obj.toPacket(), packet)
         self.assertEqual(obj.__class__.__name__, 'Reset')
 
+    # New style tests
+
     def test_CHALLENGE(self):
         from mysql_proto.auth.challenge import Challenge
         from mysql_proto.auth.challenge import __TEST_PACKETS__
@@ -170,6 +159,19 @@ class TestProto(unittest.TestCase):
             obj = Challenge.loadFromPacket(packet)
             self.assertEqual(obj.toPacket(), packet)
             self.assertEqual(obj.__class__.__name__, 'Challenge')
+
+    def test_Response(self):
+        from mysql_proto.auth.response import Response
+        from mysql_proto.auth.response import __TEST_PACKETS__
+
+        for packetdata in __TEST_PACKETS__:
+            packet = bytearray()
+            for data in packetdata:
+                packet.extend(self.hex_ba(data))
+
+            obj = Response.loadFromPacket(packet)
+            self.assertEqual(obj.toPacket(), packet)
+            self.assertEqual(obj.__class__.__name__, 'Response')
 
 
 if __name__ == "__main__":

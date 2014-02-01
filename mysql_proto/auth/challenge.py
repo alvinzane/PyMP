@@ -112,6 +112,7 @@ class Challenge(Packet):
 
 
 __TEST_PACKETS__ = [
+    # 5.5.2-m2
     [
         '36 00 00 00 0a 35 2e 35',
         '2e 32 2d 6d 32 00 0b 00',
@@ -122,6 +123,7 @@ __TEST_PACKETS__ = [
         '7c 63 5a 77 6b 34 5e 5d',
         '3a 00                  ',
     ],
+    # 5.6.4-m7-log
     [
         '50 00 00 00 0a 35 2e 36',
         '2e 34 2d 6d 37 2d 6c 6f',
