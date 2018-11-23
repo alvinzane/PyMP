@@ -4,7 +4,7 @@
 from packet import Packet
 from proto import Proto
 from resultset import ResultSet
-from flags import Flags
+from mysql_proto import flags as Flags
 
 
 class Column(Packet):

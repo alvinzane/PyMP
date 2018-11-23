@@ -3,7 +3,7 @@
 
 from packet import Packet
 from proto import Proto
-from flags import Flags
+from mysql_proto import flags as Flags
 
 
 class EOF(Packet):

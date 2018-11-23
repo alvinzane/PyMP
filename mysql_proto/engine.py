@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flags import Flags
+from mysql_proto import flags as Flags
 import multiprocessing
 from multiprocessing.reduction import rebuild_handle
 import socket

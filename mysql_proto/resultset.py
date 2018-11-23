@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from flags import Flags
+from mysql_proto import flags as Flags
 from colcount import ColCount
 from eof import EOF
 

@@ -1,8 +1,15 @@
 # coding=utf-8
+import os
+
+import sys
 
 from proto import Proto
-import flags as Flags
+import Flags as Flags
 import logging
+import logging.handlers
+
+
+logger = logging.getLogger('py_mysql_server')
 
 
 class Packet(object):
@@ -80,9 +87,8 @@ def dump(packet):
     """
     Dumps a packet to the logger
     """
-    logger = logging.getLogger('pymp.engine.packet.dump')
     offset = 0
-
+    #
     if not logger.isEnabledFor(logging.DEBUG):
         return
 
@@ -119,11 +125,10 @@ def dump(packet):
 
         dump += '\n'
         offset += 16
-
     logger.debug(dump)
 
 
-def read_server_packet(socket_in, cache_file=None):
+def read_server_packet(socket_in):
     """
     Reads a packet from a socket
     """
@@ -141,9 +146,6 @@ def read_server_packet(socket_in, cache_file=None):
     psize.extend(packet_payload)
     # if __debug__:
     #     dump(psize)
-
-    if cache_file:
-        packet2file(psize, cache_file)
 
     return psize
 
@@ -165,18 +167,16 @@ def read_client_packet(socket_in):
     # Combine the chunks
     psize.extend(packet_payload)
     if __debug__:
-        print("read_client_packet:")
+        logger.debug("read_client_packet:")
         dump(psize)
 
     return psize
 
 
-def send_client_socket(socket, buff, cache_file=None):
+def send_client_socket(socket, buff):
     socket.sendall(buff)
-    if cache_file:
-        packet2file(buff, cache_file)
     if __debug__:
-        print("send_client_socket:")
+        logger.debug("send_client_socket:")
         dump(buff)
 
 
@@ -194,29 +194,29 @@ def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
     # Evil optimization
     if not bufferResultSet:
         # socket_out.sendall(buff)
-        send_client_socket(socket_out, buff, "query_result_1.cap")
+        send_client_socket(socket_out, buff)
         del buff[:]
 
     # Read columns
     for i in xrange(0, colCount):
-        packet = read_server_packet(socket_in, "query_read_2.cap")
+        packet = read_server_packet(socket_in)
 
         # Evil optimization
         if not bufferResultSet:
             # socket_out.sendall(packet)
-            send_client_socket(socket_out, packet, "query_result_2.cap")
+            send_client_socket(socket_out, packet)
         else:
             buff.extend(packet)
 
     # Check for OK or ERR
     # Stop on ERR
-    packet = read_server_packet(socket_in,  "query_read_3.cap")
+    packet = read_server_packet(socket_in)
     packetType = getType(packet)
 
     # Evil optimization
     if not bufferResultSet:
         # socket_out.sendall(packet)
-        send_client_socket(socket_out, packet,  "query_result_3.cap")
+        send_client_socket(socket_out, packet)
     else:
         buff.extend(packet)
 
@@ -229,7 +229,7 @@ def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
 
     # Read rows
     while True:
-        packet = read_server_packet(socket_in,  "query_result_4.cap")
+        packet = read_server_packet(socket_in)
         packetType = getType(packet)
         if packetType == Flags.EOF:
             moreResults = EOF.loadFromPacket(packet).hasStatusFlag(
@@ -238,12 +238,12 @@ def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
         # Evil optimization
         if not bufferResultSet:
             # socket_out.sendall(packet)
-            send_client_socket(socket_out, packet,  "query_result_4.cap")
+            send_client_socket(socket_out, packet)
         else:
             buff.extend(packet)
             if packedPacketSize > 0 and len(buff) > packedPacketSize:
                 # socket_out.sendall(buff)
-                send_client_socket(socket_out, buff, "query_result_4.cap")
+                send_client_socket(socket_out, buff)
                 del buff[:]
 
         if packetType == Flags.EOF or packetType == Flags.ERR:
@@ -252,7 +252,7 @@ def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
     # Evil optimization
     if not bufferResultSet:
         # socket_out.sendall(buff)
-        send_client_socket(socket_out, buff, "query_result_5.cap")
+        send_client_socket(socket_out, buff)
         del buff[:]
 
     # Show Create Table or similar?

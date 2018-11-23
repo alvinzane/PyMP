@@ -5,8 +5,8 @@ from ..auth.response import Response
 from ..com.initdb import Initdb
 from ..com.query import Query
 from ..com.quit import Quit
-from ..flags import Flags
-from ..packet import read_packet
+from mysql_proto import flags as Flags
+from ..packet import read_server_packet, dump, packet2file, file2packet, send_client_socket, read_client_packet
 from ..packet import getType
 from ..packet import getSequenceId
 from ..packet import read_full_result_set
@@ -35,7 +35,7 @@ class Proxy(Plugin):
              int(context.config['plugins']['Proxy']['remotePort'])))
 
     def read_handshake(self, context):
-        packet = read_packet(self.serverSocket)
+        packet = read_server_packet(self.serverSocket)
         context.authChallenge = Challenge.loadFromPacket(packet)
         context.authChallenge.removeCapabilityFlag(Flags.CLIENT_COMPRESS)
         context.authChallenge.removeCapabilityFlag(Flags.CLIENT_SSL)
@@ -44,13 +44,33 @@ class Proxy(Plugin):
         ResultSet.characterSet = context.authChallenge.characterSet
 
         context.buff.extend(context.authChallenge.toPacket())
+        packet2file(context.buff, "handshake.cap")
 
     def send_handshake(self, context):
-        context.clientSocket.sendall(context.buff)
+        authChallenge = context.authChallenge
+        # authChallenge.serverVersion = "5.0.0-log"
+        buff = authChallenge.toPacket()
+        print("authChallenge.toPacket:")
+        dump(buff)
+
+        print("context.buff")
+        dump(context.buff)
+
+        filebuff = file2packet("handshake.cap")
+        print("file.buff")
+        dump(filebuff)
+
+        challenge2 = Challenge()
+        challenge2 = challenge2.loadFromPacket(filebuff)
+        print("challenge2.buff")
+        dump(challenge2.toPacket())
+
+        send_client_socket(context.clientSocket, filebuff)
+        # send_packet(context.clientSocket, context.buff)
         context.buff = bytearray()
 
     def read_auth(self, context):
-        packet = read_packet(context.clientSocket)
+        packet = read_client_packet(context.clientSocket)
         context.authReply = Response.loadFromPacket(packet)
 
         if not context.authReply.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
@@ -71,20 +91,23 @@ class Proxy(Plugin):
         context.buff = bytearray()
 
     def read_auth_result(self, context):
-        packet = read_packet(self.serverSocket)
+        packet = read_server_packet(self.serverSocket)
         if getType(packet) != Flags.OK:
             context.logger.fatal('Auth is not okay!')
         context.buff.extend(packet)
+        packet2file(context.buff, "auth_result.cap")
 
     def send_auth_result(self, context):
-        context.clientSocket.sendall(context.buff)
+        filebuff = file2packet("auth_result.cap")
+        # context.clientSocket.sendall(filebuff)
+        send_client_socket(context.clientSocket, filebuff)
         context.buff = bytearray()
 
     def read_query(self, context):
         context.bufferResultSet = False
         context.expectedResultSet = Flags.RS_FULL
 
-        packet = read_packet(context.clientSocket)
+        packet = read_client_packet(context.clientSocket)
         context.sequenceId = getSequenceId(packet)
         context.logger.info('Client sequenceId: %s' % context.sequenceId)
 
@@ -100,13 +123,22 @@ class Proxy(Plugin):
             context.expectedResultSet = Flags.RS_HALF
 
         context.buff.extend(packet)
+        packet2file(context.buff, "query.cap")
 
     def send_query(self, context):
         self.serverSocket.sendall(context.buff)
         context.buff = bytearray()
 
     def read_query_result(self, context):
-        packet = read_packet(self.serverSocket)
+        # return
+        packet = read_server_packet(self.serverSocket)
+        packet2file(packet, "query_result.cap")
+
+        filebuff = file2packet("query_result.cap")
+        # print("query_result:")
+        # dump(filebuff)
+
+        packet = filebuff
         context.sequenceId = getSequenceId(packet)
 
         packetType = getType(packet)
@@ -122,7 +154,8 @@ class Proxy(Plugin):
             )
 
     def send_query_result(self, context):
-        context.clientSocket.sendall(context.buff)
+        # context.clientSocket.sendall(context.buff)
+        send_client_socket(context.clientSocket, context.buff)
         context.buff = bytearray()
 
     def cleanup(self, context):

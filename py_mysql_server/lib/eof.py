@@ -3,17 +3,13 @@
 
 from packet import Packet
 from proto import Proto
-from mysql_proto import flags as Flags
+import Flags as Flags
 
 
-class OK(Packet):
-    __slots__ = ('affectedRows', 'lastInsertId', 'statusFlags',
-                 'warnings') + Packet.__slots__
+class EOF(Packet):
+    __slots__ = ('statusFlags', 'warnings') + Packet.__slots__
 
     def __init__(self):
-        super(OK, self).__init__()
-        self.affectedRows = 0
-        self.lastInsertId = 0
         self.statusFlags = 0
         self.warnings = 0
 
@@ -32,23 +28,19 @@ class OK(Packet):
     def getPayload(self):
         payload = bytearray()
 
-        payload.extend(Proto.build_byte(Flags.OK))
-        payload.extend(Proto.build_lenenc_int(self.affectedRows))
-        payload.extend(Proto.build_lenenc_int(self.lastInsertId))
-        payload.extend(Proto.build_fixed_int(2, self.statusFlags))
+        payload.extend(Proto.build_byte(Flags.EOF))
         payload.extend(Proto.build_fixed_int(2, self.warnings))
+        payload.extend(Proto.build_fixed_int(2, self.statusFlags))
 
         return payload
 
     @staticmethod
     def loadFromPacket(packet):
-        obj = OK()
+        obj = EOF()
         proto = Proto(packet, 3)
 
         obj.sequenceId = proto.get_fixed_int(1)
         proto.get_filler(1)
-        obj.affectedRows = proto.get_lenenc_int()
-        obj.lastInsertId = proto.get_lenenc_int()
         obj.statusFlags = proto.get_fixed_int(2)
         obj.warnings = proto.get_fixed_int(2)
 
