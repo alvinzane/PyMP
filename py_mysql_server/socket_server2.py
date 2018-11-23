@@ -1,14 +1,49 @@
 # coding=utf-8
+import hashlib
+import struct
+from functools import partial
+from hashlib import sha1
 import logging
 import threading
 import SocketServer
+import sys
 
 from py_mysql_server.auth.challenge import Challenge
+from py_mysql_server.auth.response import Response
 from py_mysql_server.com.initdb import Initdb
 from py_mysql_server.com.query import Query
 from py_mysql_server.lib import Flags
 from py_mysql_server.lib.packet import read_client_packet, send_client_socket, getType, dump
 from py_mysql_server.lib.packet import file2packet
+
+SCRAMBLE_LENGTH = 20
+PY2 = sys.version_info[0] == 2
+sha1_new = partial(hashlib.new, 'sha1')
+
+
+def scramble_native_password(password, message):
+    """Scramble used for mysql_native_password"""
+    if not password:
+        return b''
+
+    stage1 = sha1_new(password).digest()
+    stage2 = sha1_new(stage1).digest()
+    s = sha1_new()
+    s.update(message[:SCRAMBLE_LENGTH])
+    s.update(stage2)
+    result = s.digest()
+    return _my_crypt(result, stage1)
+
+
+def _my_crypt(message1, message2):
+    result = bytearray(message1)
+    if PY2:
+        message2 = bytearray(message2)
+
+    for i in range(len(result)):
+        result[i] ^= message2[i]
+
+    return bytes(result)
 
 
 class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
@@ -16,37 +51,27 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
     logger = logging.getLogger('server')
 
     def setup(self):
-       pass
+        pass
 
     def handle(self):
 
         # 认证
-        challenge = Challenge()
-        challenge.protocolVersion = 10
-        challenge.serverVersion = '5.7.20-log'
-        challenge.connectionId = 83
-        challenge.challenge1 = '(&^4R=2>'
-        challenge.challenge2 = 'aaaaaaaa'
-        challenge.capabilityFlags = Flags.CLIENT_PROTOCOL_41
-        challenge.characterSet = 224
-        challenge.statusFlags = 2
-        challenge.authPluginDataLength = 21
-        challenge.authPluginName = 'mysql_native_password'
-        challenge.sequenceId = 0
+        challenge1 = '12345678'
+        challenge2 = '123456789012'
+        password = 'aaaaaa'
+        challenge = self.create_challenge(challenge1, challenge2)
+        send_client_socket(self.request, challenge.toPacket())
 
-        cbuff = challenge.toPacket()
-        buff = file2packet("handshake.cap")
+        packet = read_client_packet(self.request)
+        response = Response()
+        response = response.loadFromPacket(packet)
+        # 验证密码
+        native_password = scramble_native_password(password, challenge1 + challenge2)
+        if response.authResponse != native_password:
+            buff = file2packet("auth_failed.cap")
+            send_client_socket(self.request, buff)
+            self.finish()
 
-        challenge2 = Challenge()
-        challenge2 = challenge2.loadFromPacket(buff)
-
-        dump(challenge.toPacket())
-        dump(challenge2.toPacket())
-
-        send_client_socket(self.request, buff)
-
-        # todo 验证密码
-        read_client_packet(self.request)
         buff = file2packet("auth_result.cap")
         send_client_socket(self.request, buff)
 
@@ -78,6 +103,22 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
 
             buff = file2packet("query_result_4.cap")
             send_client_socket(self.request, buff)
+
+    def create_challenge(self, challenge1, challenge2):
+        # 认证
+        challenge = Challenge()
+        challenge.protocolVersion = 10
+        challenge.serverVersion = '5.7.20-log'
+        challenge.connectionId = 83
+        challenge.challenge1 = challenge1
+        challenge.challenge2 = challenge2
+        challenge.capabilityFlags = 4160717151
+        challenge.characterSet = 224
+        challenge.statusFlags = 2
+        challenge.authPluginDataLength = 21
+        challenge.authPluginName = 'mysql_native_password'
+        challenge.sequenceId = 0
+        return challenge
 
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):

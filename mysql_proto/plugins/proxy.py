@@ -94,8 +94,10 @@ class Proxy(Plugin):
         packet = read_server_packet(self.serverSocket)
         if getType(packet) != Flags.OK:
             context.logger.fatal('Auth is not okay!')
+            packet2file(packet, "auth_failed.cap")
+        else:
+            packet2file(packet, "auth_result.cap")
         context.buff.extend(packet)
-        packet2file(context.buff, "auth_result.cap")
 
     def send_auth_result(self, context):
         filebuff = file2packet("auth_result.cap")

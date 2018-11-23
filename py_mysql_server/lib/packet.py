@@ -7,6 +7,8 @@ from proto import Proto
 import Flags as Flags
 import logging
 import logging.handlers
+from functools import partial
+import hashlib
 
 
 logger = logging.getLogger('py_mysql_server')
