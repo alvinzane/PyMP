@@ -15,6 +15,7 @@ from py_mysql_server.com.query import Query
 from py_mysql_server.lib import Flags
 from py_mysql_server.lib.packet import read_client_packet, send_client_socket, getType, dump
 from py_mysql_server.lib.packet import file2packet
+from py_mysql_server.lib.py_proxy import PyProxy
 
 SCRAMBLE_LENGTH = 20
 PY2 = sys.version_info[0] == 2
@@ -65,6 +66,10 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
         packet = read_client_packet(self.request)
         response = Response()
         response = response.loadFromPacket(packet)
+
+        username = response.username
+        self.logger.info("login user:" + username)
+
         # 验证密码
         native_password = scramble_native_password(password, challenge1 + challenge2)
         if response.authResponse != native_password:
