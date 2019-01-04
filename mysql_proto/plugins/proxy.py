@@ -1,4 +1,7 @@
 # coding=utf-8
+import re
+
+import os
 
 from ..auth.challenge import Challenge
 from ..auth.response import Response
@@ -133,7 +136,13 @@ class Proxy(Plugin):
 
     def read_query_result(self, context):
         # return
+
+        send_buff_list = []
+        read_buff_list = []
+
         packet = read_server_packet(self.serverSocket)
+        read_buff_list.append(packet)
+
         packet2file(packet, "query_result.cap")
 
         filebuff = file2packet("query_result.cap")
@@ -148,12 +157,40 @@ class Proxy(Plugin):
 
         if packetType != Flags.OK and packetType != Flags.ERR:
             read_full_result_set(
+                read_buff_list,
+                send_buff_list,
                 self.serverSocket,
                 context.clientSocket,
                 context.buff,
                 context.bufferResultSet,
                 resultsetType=context.expectedResultSet
             )
+
+        print("===== read_buff_list =====")
+        for buff in read_buff_list:
+            dump(buff)
+        print("===== read_buff_list =====\n\n")
+
+        # print("===== send_buff_list =====")
+        # for buff in send_buff_list:
+        #     dump(buff)
+        # print("===== send_buff_list =====")
+
+        file_name = re.sub(r'[^a-zA-Z\s\d]', '', context.query)
+        file_name = re.sub(r'\s', '_', file_name)
+
+        tmp_dir = "/tmp"
+        if os.path.isfile(tmp_dir + "/" + file_name + "_0.cap"):
+
+            cap_files = [name for name in os.listdir('/tmp') if name.startswith(file_name)]
+            for _file in cap_files:
+                buff = file2packet(_file)
+                send_client_socket(context.clientSocket, buff)
+            return
+
+        for i, buff in enumerate(read_buff_list):
+            print("[%s] send_client_socket [%s]:" % (file_name, i,))
+            send_client_socket(context.clientSocket, buff, "%s_%s.cap" % (file_name, i,))
 
     def send_query_result(self, context):
         # context.clientSocket.sendall(context.buff)

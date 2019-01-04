@@ -1,3 +1,4 @@
+pymysql
 docopt
 configobj
-twisted
+# twisted

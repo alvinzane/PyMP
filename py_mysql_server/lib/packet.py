@@ -169,8 +169,9 @@ def read_client_packet(socket_in):
     # Combine the chunks
     psize.extend(packet_payload)
     if __debug__:
-        logger.debug("read_client_packet:")
-        dump(psize)
+        # logger.debug("read_client_packet:")
+        # dump(psize)
+        pass
 
     return psize
 

@@ -180,7 +180,7 @@ def send_client_socket(socket, buff, cache_file=None):
         dump(buff)
 
 
-def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
+def read_full_result_set(read_buff_list, send_buff_list, socket_in, socket_out, buff, bufferResultSet=True,
                          packedPacketSize=65535,
                          resultsetType=Flags.RS_FULL):
     """
@@ -194,29 +194,36 @@ def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
     # Evil optimization
     if not bufferResultSet:
         # socket_out.sendall(buff)
-        send_client_socket(socket_out, buff, "query_result_1.cap")
+        send_buff_list.append(buff)
+        # send_client_socket(socket_out, buff, "query_result_1.cap")
         del buff[:]
 
     # Read columns
     for i in xrange(0, colCount):
         packet = read_server_packet(socket_in, "query_read_2.cap")
+        read_buff_list.append(packet)
 
         # Evil optimization
         if not bufferResultSet:
             # socket_out.sendall(packet)
-            send_client_socket(socket_out, packet, "query_result_2.cap")
+            send_buff_list.append(packet)
+            # send_client_socket(socket_out, packet, "query_result_2.cap")
         else:
             buff.extend(packet)
 
     # Check for OK or ERR
     # Stop on ERR
     packet = read_server_packet(socket_in,  "query_read_3.cap")
+    sequenceId = getSequenceId(packet)
+    print("sequenceId", sequenceId)
+    read_buff_list.append(packet)
     packetType = getType(packet)
 
     # Evil optimization
     if not bufferResultSet:
         # socket_out.sendall(packet)
-        send_client_socket(socket_out, packet,  "query_result_3.cap")
+        send_buff_list.append(packet)
+        # send_client_socket(socket_out, packet,  "query_result_3.cap")
     else:
         buff.extend(packet)
 
@@ -230,6 +237,8 @@ def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
     # Read rows
     while True:
         packet = read_server_packet(socket_in,  "query_result_4.cap")
+        read_buff_list.append(packet)
+
         packetType = getType(packet)
         if packetType == Flags.EOF:
             moreResults = EOF.loadFromPacket(packet).hasStatusFlag(
@@ -238,12 +247,14 @@ def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
         # Evil optimization
         if not bufferResultSet:
             # socket_out.sendall(packet)
-            send_client_socket(socket_out, packet,  "query_result_4.cap")
+            send_buff_list.append(packet)
+            # send_client_socket(socket_out, packet,  "query_result_4.cap")
         else:
             buff.extend(packet)
             if packedPacketSize > 0 and len(buff) > packedPacketSize:
                 # socket_out.sendall(buff)
-                send_client_socket(socket_out, buff, "query_result_4.cap")
+                send_buff_list.append(buff)
+                # send_client_socket(socket_out, buff, "query_result_4.cap")
                 del buff[:]
 
         if packetType == Flags.EOF or packetType == Flags.ERR:
@@ -252,7 +263,8 @@ def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
     # Evil optimization
     if not bufferResultSet:
         # socket_out.sendall(buff)
-        send_client_socket(socket_out, buff, "query_result_5.cap")
+        send_buff_list.append(buff)
+        # send_client_socket(socket_out, buff, "query_result_5.cap")
         del buff[:]
 
     # Show Create Table or similar?
@@ -261,11 +273,15 @@ def read_full_result_set(socket_in, socket_out, buff, bufferResultSet=True,
 
     # Multiple result sets?
     if moreResults:
+        packet = read_server_packet(socket_in)
+        read_buff_list.append(packet)
+
         buff.extend(
             read_full_result_set(
+                send_buff_list,
                 socket_in,
                 socket_out,
-                read_server_packet(socket_in),
+                packet,
                 bufferResultSet=bufferResultSet,
                 packedPacketSize=packedPacketSize,
                 resultsetType=resultsetType)
