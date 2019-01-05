@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
+import hashlib
+import sys
+from functools import partial
 
 
 class Proto(object):
@@ -404,6 +407,7 @@ abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123\
             self.offset += 1
 
         return value
+
 
 if __name__ == "__main__":
     import doctest

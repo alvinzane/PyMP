@@ -1,63 +1,36 @@
 # coding=utf-8
-import hashlib
-import re
-import struct
-from functools import partial
-from hashlib import sha1
+import SocketServer
 import logging
 import threading
-import SocketServer
-import sys
 
-import os
+from pymysql._auth import scramble_native_password
 
 from py_mysql_server.auth.challenge import Challenge
 from py_mysql_server.auth.response import Response
 from py_mysql_server.com.initdb import Initdb
 from py_mysql_server.com.query import Query
 from py_mysql_server.lib import Flags
-from py_mysql_server.lib.packet import read_client_packet, send_client_socket, getType, dump
 from py_mysql_server.lib.packet import file2packet
+from py_mysql_server.lib.packet import read_client_packet, send_client_socket, getType
 from py_mysql_server.lib.py_proxy import PyProxy
 from py_mysql_server.lib.py_upstream import PyUpstream
 
-SCRAMBLE_LENGTH = 20
-PY2 = sys.version_info[0] == 2
-sha1_new = partial(hashlib.new, 'sha1')
-
-
-def scramble_native_password(password, message):
-    """Scramble used for mysql_native_password"""
-    if not password:
-        return b''
-
-    stage1 = sha1_new(password).digest()
-    stage2 = sha1_new(stage1).digest()
-    s = sha1_new()
-    s.update(message[:SCRAMBLE_LENGTH])
-    s.update(stage2)
-    result = s.digest()
-    return _my_crypt(result, stage1)
-
-
-def _my_crypt(message1, message2):
-    result = bytearray(message1)
-    if PY2:
-        message2 = bytearray(message2)
-
-    for i in range(len(result)):
-        result[i] ^= message2[i]
-
-    return bytes(result)
+connection_counter = 0
+logger = None
 
 
 class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
+    connection_id = 0
     timeout = 5
     proxies = dict()
     upstreams = dict()
+    user_id = 0
     logger = logging.getLogger('server')
 
     def setup(self):
+        global connection_counter
+        connection_counter += 1
+        self.connection_id = connection_counter
         self.proxies["main"] = PyProxy(logger=logger)
         self.upstreams["main"] = PyUpstream(logger=logger)
         pass
@@ -67,7 +40,7 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
         # 认证
         challenge1 = '12345678'
         challenge2 = '123456789012'
-        challenge = self.create_challenge(challenge1, challenge2)
+        challenge = self.create_challenge(challenge1, challenge2, self.connection_id)
         send_client_socket(self.request, challenge.toPacket())
 
         packet = read_client_packet(self.request)
@@ -77,9 +50,10 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
         username = response.username
         self.logger.info("login user:" + username)
 
-        sql_user_password = "select user_password from mysql_users where user_name = %s"
+        sql_user_password = "select user_id, user_password from mysql_users where user_name = %s"
         result = self.proxies["main"].query2one(sql_user_password, (username,))
         password = result["user_password"]
+        self.user_id = result["user_id"]
 
         # 验证密码
         native_password = scramble_native_password(password, challenge1 + challenge2)
@@ -101,18 +75,21 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                 self.finish()
             elif packet_type == Flags.COM_INIT_DB:
                 schema = Initdb.loadFromPacket(packet).schema
+                self.logger.info("use " + schema)
+                self.dispatch_packet(packet)
+
             elif packet_type == Flags.COM_QUERY:
                 self.handle_query(packet)
             elif packet_type == Flags.COM_FIELD_LIST:
-                pass
+                self.dispatch_packet(packet)
 
     @staticmethod
-    def create_challenge(challenge1, challenge2):
+    def create_challenge(challenge1, challenge2, connection_id):
         # 认证
         challenge = Challenge()
         challenge.protocolVersion = 10
         challenge.serverVersion = '5.7.20-log'
-        challenge.connectionId = 83
+        challenge.connectionId = connection_id
         challenge.challenge1 = challenge1
         challenge.challenge2 = challenge2
         challenge.capabilityFlags = 4160717151
@@ -123,32 +100,37 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
         challenge.sequenceId = 0
         return challenge
 
+    def dispatch_packet(self, packet):
+        upstream = self.upstreams["main"]
+        upstream.sendall(packet)
+        buff_list = upstream.read_query_result()
+        for buff in buff_list:
+            send_client_socket(self.request, buff)
+
     def handle_query(self, packet):
         query = Query.loadFromPacket(packet).query
         self.logger.info("query: " + query)
-        file_name = re.sub(r'[^a-zA-Z\s\d]', '', query)
-        file_name = re.sub(r'\s', '_', file_name)
+        sql_add_com_history = "insert into com_history set user_id = %s,command_text= %s"
+        self.proxies["main"].insert(sql_add_com_history, (self.user_id, query))
+        # file_name = re.sub(r'[^a-zA-Z\s\d]', '', query)
+        # file_name = re.sub(r'\s', '_', file_name)
 
-        tmp_dir = "/tmp"
-        if os.path.isfile(tmp_dir + "/" + file_name + "_0.cap"):
-
-            cap_files = [name for name in os.listdir('/tmp') if name.startswith(file_name)]
-            for _file in cap_files:
-                buff = file2packet(_file)
-                print("[%s] send_client_socket:" % (_file,))
-                send_client_socket(self.request, buff)
-            return
+        # tmp_dir = "/tmp"
+        # if os.path.isfile(tmp_dir + "/" + file_name + "_0.cap"):
+        #
+        #     cap_files = [name for name in os.listdir('/tmp') if name.startswith(file_name)]
+        #     for _file in cap_files:
+        #         buff = file2packet(_file)
+        #         print("[%s] send_client_socket:" % (_file,))
+        #         send_client_socket(self.request, buff)
+        #     return
 
         upstream = self.upstreams["main"]
         upstream.sendall(packet)
         buff_list = upstream.read_query_result()
-        response = bytearray()
         for i, buff in enumerate(buff_list):
-            buff[3] = i + 1
             logger.debug("send_client_socket [%s]:" % (i, ))
             send_client_socket(self.request, buff)
-            # response.extend(buff)
-        # send_client_socket(self.request, response)
         pass
 
 
@@ -156,9 +138,10 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     pass
 
 
-if __name__ == "__main__":
+def main():
+    global logger
     # Port 0 means to select an arbitrary unused port
-    HOST, PORT = "0.0.0.0", 6069
+    HOST, PORT = "0.0.0.0", 6067
 
     server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
     ip, port = server.server_address
@@ -167,13 +150,11 @@ if __name__ == "__main__":
     logging.basicConfig(format=FORMAT)
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-
-    # Start a thread with the server -- that thread will then start one
-    # more thread for each request
     server_thread = threading.Thread(target=server.serve_forever)
-    # Exit the server thread when the main thread terminates
-    # server_thread.daemon = True
+
     server_thread.start()
     logger.info("Server loop running in thread: %s %s %s" % (server_thread.name, HOST, PORT))
-    # server.shutdown()
-    # server.server_close()
+
+
+if __name__ == "__main__":
+    main()

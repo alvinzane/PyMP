@@ -18,3 +18,13 @@ create table `mysql_servers`(
   primary key(server_id),
   unique key(server_host,server_port,server_user)
 )engine=innodb, COMMENT 'server表';
+
+create table `com_history`(
+  id int not null AUTO_INCREMENT COMMENT 'id',
+  user_id int not null COMMENT '用户id',
+  command_text varchar(255) not null COMMENT '指令内容',
+  add_time datetime not null default CURRENT_TIMESTAMP  COMMENT '新增时间',
+  primary key(id),
+  key(user_id),
+  key(add_time)
+)engine=innodb, COMMENT '用户指令历史记录表';

@@ -1,50 +1,17 @@
 # coding=utf-8
-import hashlib
-import struct
-from functools import partial
-from hashlib import sha1
+import SocketServer
 import logging
 import threading
-import SocketServer
-import sys
+
+from pymysql._auth import scramble_native_password
 
 from py_mysql_server.auth.challenge import Challenge
 from py_mysql_server.auth.response import Response
 from py_mysql_server.com.initdb import Initdb
 from py_mysql_server.com.query import Query
 from py_mysql_server.lib import Flags
-from py_mysql_server.lib.packet import read_client_packet, send_client_socket, getType, dump
 from py_mysql_server.lib.packet import file2packet
-from py_mysql_server.lib.py_proxy import PyProxy
-
-SCRAMBLE_LENGTH = 20
-PY2 = sys.version_info[0] == 2
-sha1_new = partial(hashlib.new, 'sha1')
-
-
-def scramble_native_password(password, message):
-    """Scramble used for mysql_native_password"""
-    if not password:
-        return b''
-
-    stage1 = sha1_new(password).digest()
-    stage2 = sha1_new(stage1).digest()
-    s = sha1_new()
-    s.update(message[:SCRAMBLE_LENGTH])
-    s.update(stage2)
-    result = s.digest()
-    return _my_crypt(result, stage1)
-
-
-def _my_crypt(message1, message2):
-    result = bytearray(message1)
-    if PY2:
-        message2 = bytearray(message2)
-
-    for i in range(len(result)):
-        result[i] ^= message2[i]
-
-    return bytes(result)
+from py_mysql_server.lib.packet import read_client_packet, send_client_socket, getType
 
 
 class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
