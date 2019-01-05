@@ -278,4 +278,13 @@ MAX_MEDIUMINT_WIDTH                     = 8
 MAX_INT_WIDTH                           = 10     
 MAX_BIGINT_WIDTH                        = 20     
 MAX_CHAR_WIDTH                          = 255
-MAX_BLOB_WIDTH                          = 16777216   
+MAX_BLOB_WIDTH                          = 16777216
+
+local_vars = locals()
+
+
+def header_name(val):
+    for _var in local_vars:
+        if local_vars[_var] == val:
+            return _var
+    return "UNDEFINED_HEADER_NAME"
