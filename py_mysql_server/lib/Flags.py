@@ -284,7 +284,14 @@ local_vars = locals()
 
 
 def header_name(val):
+    _list = [
+        "OK",
+        "ERR",
+        "EOF",
+        "LOCAL_INFILE",
+    ]
     for _var in local_vars:
-        if local_vars[_var] == val:
-            return _var
-    return "UNDEFINED_HEADER_NAME"
+        if _var in _list:
+            if local_vars[_var] == val:
+                return _var
+    return ""

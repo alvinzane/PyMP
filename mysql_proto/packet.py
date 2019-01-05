@@ -4,6 +4,8 @@ from proto import Proto
 import flags as Flags
 import logging
 
+from py_mysql_server.lib.Flags import header_name
+
 
 class Packet(object):
     """
@@ -121,6 +123,49 @@ def dump(packet):
         offset += 16
 
     logger.debug(dump)
+
+
+def dump_my_packet(packet):
+    """
+    Dumps a packet to the string
+    """
+    offset = 0
+    header = getType(packet)
+    dump = 'Length: %s, SequenceId: %s, Header: %s=%s \n' % (getSize(packet), getSequenceId(packet), header_name(header), header,)
+
+    while offset < len(packet):
+        dump += hex(offset)[2:].zfill(8).upper()
+        dump += '  '
+
+        for x in xrange(16):
+            if offset + x >= len(packet):
+                dump += '   '
+            else:
+                dump += hex(packet[offset + x])[2:].upper().zfill(2)
+                dump += ' '
+                if x == 7:
+                    dump += ' '
+
+        dump += '  '
+
+        for x in xrange(16):
+            if offset + x >= len(packet):
+                break
+            c = chr(packet[offset + x])
+            if (len(c) > 1
+                    or packet[offset + x] < 32
+                    or packet[offset + x] == 255):
+                dump += '.'
+            else:
+                dump += c
+
+            if x == 7:
+                dump += ' '
+
+        dump += '\n'
+        offset += 16
+
+    print(dump)
 
 
 def read_server_packet(socket_in, cache_file=None):

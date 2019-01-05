@@ -76,6 +76,8 @@ class Proxy(Plugin):
         packet = read_client_packet(context.clientSocket)
         context.authReply = Response.loadFromPacket(packet)
 
+        packet2file(packet, "authReply.cap")
+
         if not context.authReply.hasCapabilityFlag(Flags.CLIENT_PROTOCOL_41):
             context.logger.fatal('We do not support Protocols under 4.1')
             context.halt()
